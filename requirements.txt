@@ -1,0 +1,68 @@
+# Core Streamlit Dependencies
+streamlit>=1.28.0
+pandas>=1.5.0
+plotly>=5.15.0
+
+# HTTP and API Libraries
+requests>=2.31.0
+httpx>=0.24.0
+aiohttp>=3.8.0
+
+# Data Validation and Processing
+pydantic>=2.0.0
+marshmallow>=3.19.0
+
+# Environment and Configuration
+python-dotenv>=1.0.0
+pyyaml>=6.0
+
+# Authentication and Security
+bcrypt>=4.0.0
+PyJWT>=2.8.0
+cryptography>=41.0.0
+
+# Database Support (Optional)
+sqlalchemy>=2.0.0
+alembic>=1.12.0
+sqlite3  # Built-in with Python
+
+# Caching
+redis>=4.5.0
+diskcache>=5.6.0
+
+# File Handling
+python-multipart>=0.0.6
+Pillow>=10.0.0
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+httpx>=0.24.0  # For testing HTTP clients
+
+# Logging and Monitoring
+structlog>=23.1.0
+sentry-sdk[streamlit]>=1.32.0
+
+# Development Tools
+black>=23.0.0
+flake8>=6.0.0
+isort>=5.12.0
+mypy>=1.5.0
+
+# Documentation
+mkdocs>=1.5.0
+mkdocs-material>=9.2.0
+
+# Optional: Production WSGI Server
+gunicorn>=21.0.0  # For production deployment
+uvicorn>=0.23.0   # Alternative ASGI server
+
+# Optional: Cloud Storage
+boto3>=1.28.0     # For AWS S3
+google-cloud-storage>=2.10.0  # For Google Cloud Storage
+
+# Optional: Additional Chart Types
+altair>=5.0.0
+matplotlib>=3.7.0
+seaborn>=0.12.0

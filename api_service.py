@@ -1,0 +1,220 @@
+import requests
+import streamlit as st
+from typing import Dict, List, Optional
+from dataclasses import dataclass
+from datetime import datetime
+from config import DashboardConfig, ContentStatus, Priority, ContentType
+
+@dataclass
+class DashboardMetrics:
+    total_movies: int
+    content_items: int
+    uploaded: int
+    uploaded_weekly_change: int
+    pending: int
+    upload_rate: float
+
+@dataclass
+class ContentItem:
+    id: str
+    name: str
+    content_type: ContentType
+    status: ContentStatus
+    priority: Priority
+    updated: str
+    created_at: datetime = None
+
+@dataclass
+class StatusDistribution:
+    ready: int
+    uploaded: int
+    in_progress: int
+    new: int
+
+@dataclass
+class PriorityDistribution:
+    high: int
+    medium: int
+    low: int
+
+class APIService:
+    def __init__(self, config: DashboardConfig):
+        self.config = config
+        self.session = requests.Session()
+        self.session.headers.update({
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        })
+    
+    @st.cache_data(ttl=30)
+    def get_dashboard_metrics(_self) -> DashboardMetrics:
+        """Fetch dashboard metrics from API"""
+        try:
+            # Replace with actual API call
+            # response = _self.session.get(f"{_self.config.API_BASE_URL}/metrics")
+            # response.raise_for_status()
+            # data = response.json()
+            
+            # Mock data for now - replace with API response
+            return DashboardMetrics(
+                total_movies=127,
+                content_items=2847,
+                uploaded=1923,
+                uploaded_weekly_change=47,
+                pending=234,
+                upload_rate=67.5
+            )
+        except Exception as e:
+            st.error(f"Error fetching metrics: {str(e)}")
+            return DashboardMetrics(0, 0, 0, 0, 0, 0.0)
+    
+    @st.cache_data(ttl=30)
+    def get_status_distribution(_self) -> StatusDistribution:
+        """Fetch content status distribution from API"""
+        try:
+            # Replace with actual API call
+            # response = _self.session.get(f"{_self.config.API_BASE_URL}/status-distribution")
+            # response.raise_for_status()
+            # data = response.json()
+            
+            return StatusDistribution(
+                ready=45,
+                uploaded=38,
+                in_progress=25,
+                new=19
+            )
+        except Exception as e:
+            st.error(f"Error fetching status distribution: {str(e)}")
+            return StatusDistribution(0, 0, 0, 0)
+    
+    @st.cache_data(ttl=30)
+    def get_priority_distribution(_self) -> PriorityDistribution:
+        """Fetch priority distribution from API"""
+        try:
+            # Replace with actual API call
+            # response = _self.session.get(f"{_self.config.API_BASE_URL}/priority-distribution")
+            # response.raise_for_status()
+            # data = response.json()
+            
+            return PriorityDistribution(
+                high=42,
+                medium=68,
+                low=17
+            )
+        except Exception as e:
+            st.error(f"Error fetching priority distribution: {str(e)}")
+            return PriorityDistribution(0, 0, 0)
+    
+    @st.cache_data(ttl=30)
+    def get_recent_activity(_self, limit: int = 10) -> List[ContentItem]:
+        """Fetch recent activity from API"""
+        try:
+            # Replace with actual API call
+            # response = _self.session.get(f"{_self.config.API_BASE_URL}/recent-activity?limit={limit}")
+            # response.raise_for_status()
+            # data = response.json()
+            
+            # Mock data for now
+            return [
+                ContentItem(
+                    id="1",
+                    name="12th Fail",
+                    content_type=ContentType.REEL,
+                    status=ContentStatus.READY,
+                    priority=Priority.HIGH,
+                    updated="2 hours ago"
+                ),
+                ContentItem(
+                    id="2",
+                    name="2 States",
+                    content_type=ContentType.TRAILER,
+                    status=ContentStatus.UPLOADED,
+                    priority=Priority.MEDIUM,
+                    updated="4 hours ago"
+                ),
+                ContentItem(
+                    id="3",
+                    name="Laal Singh Chaddha",
+                    content_type=ContentType.MOVIE,
+                    status=ContentStatus.IN_PROGRESS,
+                    priority=Priority.MEDIUM,
+                    updated="6 hours ago"
+                ),
+                ContentItem(
+                    id="4",
+                    name="Unknown Content",
+                    content_type=ContentType.REEL,
+                    status=ContentStatus.NEW,
+                    priority=Priority.LOW,
+                    updated="1 day ago"
+                )
+            ]
+        except Exception as e:
+            st.error(f"Error fetching recent activity: {str(e)}")
+            return []
+    
+    def refresh_data(self) -> bool:
+        """Refresh all cached data"""
+        try:
+            # Clear Streamlit cache
+            st.cache_data.clear()
+            return True
+        except Exception as e:
+            st.error(f"Error refreshing data: {str(e)}")
+            return False
+    
+    def import_data(self, file_data: bytes, file_type: str) -> Dict:
+        """Import data via API"""
+        try:
+            # files = {'file': (f'import.{file_type}', file_data, f'application/{file_type}')}
+            # response = self.session.post(f"{self.config.API_BASE_URL}/import", files=files)
+            # response.raise_for_status()
+            # return response.json()
+            
+            # Mock response
+            return {"status": "success", "message": "Data imported successfully", "imported_count": 25}
+        except Exception as e:
+            st.error(f"Error importing data: {str(e)}")
+            return {"status": "error", "message": str(e)}
+    
+    def add_content(self, content_data: Dict) -> Dict:
+        """Add new content via API"""
+        try:
+            # response = self.session.post(f"{self.config.API_BASE_URL}/content", json=content_data)
+            # response.raise_for_status()
+            # return response.json()
+            
+            # Mock response
+            return {"status": "success", "message": "Content added successfully", "id": "new_123"}
+        except Exception as e:
+            st.error(f"Error adding content: {str(e)}")
+            return {"status": "error", "message": str(e)}
+    
+    def update_content_status(self, content_id: str, status: ContentStatus) -> Dict:
+        """Update content status via API"""
+        try:
+            # response = self.session.patch(
+            #     f"{self.config.API_BASE_URL}/content/{content_id}/status", 
+            #     json={"status": status.value}
+            # )
+            # response.raise_for_status()
+            # return response.json()
+            
+            # Mock response
+            return {"status": "success", "message": f"Content {content_id} status updated to {status.value}"}
+        except Exception as e:
+            st.error(f"Error updating content status: {str(e)}")
+            return {"status": "error", "message": str(e)}
+    
+    def delete_content(self, content_id: str) -> Dict:
+        """Delete content via API"""
+        try:
+            # response = self.session.delete(f"{self.config.API_BASE_URL}/content/{content_id}")
+            # response.raise_for_status()
+            # return response.json()
+            
+            # Mock response
+            return {"status": "success", "message": f"Content {content_id} deleted successfully"}
+        except Exception as e:
+            st.error(f"Error deleting content: {str(e)}")
+            return {"status": "error", "message": str(e)}
