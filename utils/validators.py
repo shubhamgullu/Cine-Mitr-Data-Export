@@ -220,6 +220,62 @@ class DataValidator:
                 context={"max_size_mb": max_size_mb}
             )
 
+# FastAPI-specific file validation
+async def validate_file_upload(file, config):
+    """Validate uploaded file for FastAPI"""
+    from fastapi import UploadFile
+    from models import FileValidationResult
+    from pathlib import Path
+    
+    try:
+        # Check if file exists
+        if not file or not file.filename:
+            return FileValidationResult(
+                is_valid=False,
+                error_message="No file provided"
+            )
+        
+        # Get file extension
+        file_path = Path(file.filename)
+        file_extension = file_path.suffix.lower().lstrip('.')
+        
+        # Check allowed extensions
+        if file_extension not in [ext.lower().lstrip('.') for ext in config.allowed_extensions]:
+            return FileValidationResult(
+                is_valid=False,
+                error_message=f"File type '{file_extension}' not allowed. Allowed types: {', '.join(config.allowed_extensions)}",
+                file_extension=file_extension
+            )
+        
+        # Check file size (read first to get size)
+        file_content = await file.read()
+        file_size_bytes = len(file_content)
+        file_size_mb = file_size_bytes / (1024 * 1024)
+        
+        # Reset file position for later reading
+        await file.seek(0)
+        
+        max_size_bytes = config.max_file_size_mb * 1024 * 1024
+        if file_size_bytes > max_size_bytes:
+            return FileValidationResult(
+                is_valid=False,
+                error_message=f"File size {file_size_mb:.1f}MB exceeds maximum allowed size of {config.max_file_size_mb}MB",
+                file_size_mb=file_size_mb,
+                file_extension=file_extension
+            )
+        
+        return FileValidationResult(
+            is_valid=True,
+            file_size_mb=file_size_mb,
+            file_extension=file_extension
+        )
+        
+    except Exception as e:
+        return FileValidationResult(
+            is_valid=False,
+            error_message=f"Error validating file: {str(e)}"
+        )
+
 # Content-specific validators
 class ContentValidator(DataValidator):
     """Validators specific to content management"""

@@ -1,3 +1,8 @@
+# Core FastAPI Dependencies
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+python-multipart>=0.0.6
+
 # Core Streamlit Dependencies
 streamlit>=1.28.0
 pandas>=1.5.0
@@ -31,7 +36,6 @@ redis>=4.5.0
 diskcache>=5.6.0
 
 # File Handling
-python-multipart>=0.0.6
 Pillow>=10.0.0
 
 # Testing

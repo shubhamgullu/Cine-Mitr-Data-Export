@@ -31,16 +31,16 @@ def main():
     elif selected_page == "content_items":
         render_content_items_page()
     elif selected_page == "upload_pipeline":
-        render_upload_pipeline_page()
+        render_upload_pipeline_page(ui)
     elif selected_page == "analytics":
         render_analytics_page()
     elif selected_page == "settings":
         render_settings_page()
 
 def render_dashboard_page(ui: UIComponents, api_service: APIService):
-    """Render the main dashboard page"""
-    # Header
-    ui.render_header()
+    """Render the enhanced dashboard page with updated UI"""
+    # Enhanced header with API info
+    ui.render_header_with_api_info()
     
     # Fetch data from API
     metrics = api_service.get_dashboard_metrics()
@@ -48,20 +48,32 @@ def render_dashboard_page(ui: UIComponents, api_service: APIService):
     priority_dist = api_service.get_priority_distribution()
     recent_activity = api_service.get_recent_activity()
     
-    # Render components
-    ui.render_metrics_cards(metrics)
+    # Enhanced metrics cards with trends
+    ui.render_enhanced_metrics(metrics)
     
-    # Charts section
-    col_left, col_right = st.columns(2)
+    # Filters and action buttons
+    ui.render_filters_and_actions()
+    
+    # File upload area
+    st.markdown("---")
+    ui.render_file_upload_area()
+    
+    # Enhanced charts section
+    col_left, col_center, col_right = st.columns(3)
+    
     with col_left:
-        ui.render_status_chart(status_dist)
+        ui.render_interactive_status_chart(status_dist)
+    
+    with col_center:
+        ui.render_priority_bar_chart(priority_dist)
+    
     with col_right:
-        ui.render_priority_chart(priority_dist)
+        ui.render_storage_donut_chart()
     
-    # Recent activity
-    ui.render_recent_activity(recent_activity)
+    # Enhanced recent activity with selection
+    ui.render_enhanced_recent_activity(recent_activity)
     
-    # Footer
+    # Enhanced footer
     ui.render_footer()
 
 def render_movies_page():
@@ -90,15 +102,34 @@ def render_content_items_page():
     if st.button("Manage Content Items"):
         st.success("Content management API call would go here")
 
-def render_upload_pipeline_page():
-    """Render upload pipeline page"""
+def render_upload_pipeline_page(ui: UIComponents = None):
+    """Render enhanced upload pipeline page"""
     st.header("⬆️ Upload Pipeline")
-    st.info("Upload pipeline page - API integration ready for file uploads")
     
-    # Add upload functionality here
-    uploaded_file = st.file_uploader("Choose a file")
-    if uploaded_file is not None:
-        st.success(f"File '{uploaded_file.name}' ready for upload via API")
+    # Upload statistics
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric("Active Uploads", "12", "+3")
+    with col2:
+        st.metric("Completed Today", "47", "+15")
+    with col3:
+        st.metric("Upload Rate", "67.5%", "+2.3%")
+    with col4:
+        st.metric("Failed Uploads", "8", "-2")
+    
+    # Enhanced file upload area
+    if ui:
+        ui.render_file_upload_area()
+    else:
+        # Fallback upload area
+        uploaded_files = st.file_uploader(
+            "Choose files",
+            accept_multiple_files=True,
+            type=['mp4', 'mov', 'jpg', 'jpeg', 'png']
+        )
+        if uploaded_files:
+            st.success(f"✅ {len(uploaded_files)} file(s) ready for upload")
 
 def render_analytics_page():
     """Render analytics page"""
