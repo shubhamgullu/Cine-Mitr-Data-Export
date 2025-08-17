@@ -108,3 +108,6 @@ class ServiceUnavailableException(CineMitrException):
         context = kwargs.get('context', {})
         context.update({"service": service_name})
         super().__init__(message, error_code="SERVICE_UNAVAILABLE", context=context)
+
+# Alias for backward compatibility
+APIError = APIException

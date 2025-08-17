@@ -1,0 +1,32 @@
+2025-08-18 01:59:56 | services.content_service | INFO | logger.py:78 | Logger initialized for services.content_service
+2025-08-18 02:01:03 | services.content_service | INFO | logger.py:78 | Logger initialized for services.content_service
+2025-08-18 02:01:05 | services.content_service | INFO | content_service.py:33 | Initializing Content Service with database connection
+2025-08-18 02:02:26 | services.content_service | INFO | content_service.py:293 | Created new movie: Test Movie (2edc87f4-002c-4803-b0d8-b0c8e511ed4f)
+2025-08-18 02:02:38 | services.content_service | INFO | content_service.py:293 | Created new movie: Test (2840e202-2fd7-4468-a222-9ea369f7b5a6)
+2025-08-18 02:02:56 | services.content_service | INFO | content_service.py:293 | Created new movie: Data (3aa4d020-838c-49e5-9391-1556d5c2a8c0)
+2025-08-18 02:08:51 | services.content_service | INFO | content_service.py:293 | Created new movie: Latest Test Movie (c22b3ac4-23c9-4c59-b5d1-73289a2fef2e)
+2025-08-18 02:11:45 | services.content_service | INFO | content_service.py:293 | Created new movie: API Configuration Test (bef57d89-3568-4638-92cc-6968f9674d67)
+2025-08-18 02:15:08 | services.content_service | INFO | logger.py:78 | Logger initialized for services.content_service
+2025-08-18 02:15:08 | services.content_service | INFO | content_service.py:33 | Initializing Content Service with database connection
+2025-08-18 02:16:12 | services.content_service | INFO | content_service.py:293 | Created new movie: 1 (02f02fda-8ba4-425d-91b6-0ad6ce9c2397)
+2025-08-18 02:16:17 | services.content_service | INFO | content_service.py:293 | Created new movie: vgdg (af0fbf83-3838-4f23-ab36-8ed14edad855)
+2025-08-18 02:16:21 | services.content_service | INFO | content_service.py:293 | Created new movie: ssrfd (7b7911c5-9f91-41ce-8f5b-d881981b36b2)
+2025-08-18 02:16:40 | services.content_service | INFO | content_service.py:293 | Created new movie: Value Check (09d0ff72-6fe6-4f4e-b62c-df0caa53d7fe)
+2025-08-18 02:16:47 | services.content_service | INFO | content_service.py:293 | Created new movie: Data Input Values (cc466058-f888-426b-91f1-a666f60b342b)
+2025-08-18 02:16:51 | services.content_service | INFO | content_service.py:293 | Created new movie: New Movie Name  (e840f7d4-9112-4cf9-999a-b8912264a9ed)
+2025-08-18 02:17:23 | services.content_service | INFO | content_service.py:323 | Updated movie: Data Input Values 1 (cc466058-f888-426b-91f1-a666f60b342b)
+2025-08-18 02:27:44 | services.content_service | INFO | content_service.py:293 | Created new movie: Data (1a4c846f-f97d-4fac-aacc-a11fe1472216)
+2025-08-18 02:34:25 | services.content_service | INFO | logger.py:78 | Logger initialized for services.content_service
+2025-08-18 02:34:25 | services.content_service | INFO | content_service.py:33 | Initializing Content Service with database connection
+2025-08-18 02:35:31 | services.content_service | INFO | content_service.py:356 | Started export 8c72fdc7-e0d0-496d-8e24-4c41e1b78c8d in format csv
+2025-08-18 02:35:46 | services.content_service | ERROR | content_service.py:426 | Export 8c72fdc7-e0d0-496d-8e24-4c41e1b78c8d failed: 'ContentService' object has no attribute 'repository'
+2025-08-18 02:36:42 | services.content_service | INFO | logger.py:78 | Logger initialized for services.content_service
+2025-08-18 02:36:43 | services.content_service | INFO | content_service.py:33 | Initializing Content Service with database connection
+2025-08-18 02:36:52 | services.content_service | INFO | content_service.py:356 | Started export 800e9b1b-145f-42d2-9492-904e46ecc2fd in format csv
+2025-08-18 02:36:54 | services.content_service | ERROR | content_service.py:426 | Export 800e9b1b-145f-42d2-9492-904e46ecc2fd failed: 'builtin_function_or_method' object has no attribute 'lower'
+2025-08-18 02:37:32 | services.content_service | INFO | logger.py:78 | Logger initialized for services.content_service
+2025-08-18 02:37:33 | services.content_service | INFO | content_service.py:33 | Initializing Content Service with database connection
+2025-08-18 02:37:40 | services.content_service | INFO | content_service.py:356 | Started export ffa9ff41-4173-45bf-aa6b-1192e9afe2f4 in format csv
+2025-08-18 02:37:40 | services.content_service | INFO | content_service.py:443 | Export ffa9ff41-4173-45bf-aa6b-1192e9afe2f4 completed successfully: exports\ffa9ff41-4173-45bf-aa6b-1192e9afe2f4.csv
+2025-08-18 02:39:34 | services.content_service | INFO | content_service.py:356 | Started export e106fc36-7454-4d0d-8dcf-aaa8ccf6e412 in format json
+2025-08-18 02:39:34 | services.content_service | INFO | content_service.py:443 | Export e106fc36-7454-4d0d-8dcf-aaa8ccf6e412 completed successfully: exports\e106fc36-7454-4d0d-8dcf-aaa8ccf6e412.json

@@ -218,3 +218,77 @@ class APIService:
         except Exception as e:
             st.error(f"Error deleting content: {str(e)}")
             return {"status": "error", "message": str(e)}
+    
+    def create_movie(self, movie_data: Dict) -> Dict:
+        """Create new movie via API"""
+        try:
+            response = self.session.post(f"{self.config.api.base_url}/movies", json=movie_data)
+            response.raise_for_status()
+            api_response = response.json()
+            
+            if api_response.get("success"):
+                return {
+                    "status": "success", 
+                    "message": api_response.get("message", "Movie created successfully"),
+                    "data": api_response.get("data", {})
+                }
+            else:
+                return {
+                    "status": "error", 
+                    "message": api_response.get("message", "Failed to create movie")
+                }
+        except Exception as e:
+            st.error(f"Error creating movie: {str(e)}")
+            return {"status": "error", "message": str(e)}
+    
+    def get_movies_list(self, page: int = 1, limit: int = 20) -> List[Dict]:
+        """Get movies list from API"""
+        try:
+            response = self.session.get(f"{self.config.api.base_url}/movies?page={page}&limit={limit}")
+            response.raise_for_status()
+            api_response = response.json()
+            
+            # Extract the data array from the response
+            if api_response.get("success") and "data" in api_response:
+                return api_response["data"]
+            else:
+                st.error(f"API Error: {api_response.get('message', 'Unknown error')}")
+                return []
+                
+        except Exception as e:
+            st.error(f"Error fetching movies: {str(e)}")
+            return []
+    
+    def export_movies(self, format: str = "csv", selected_ids: List[str] = None) -> Dict:
+        """Export movies to specified format"""
+        try:
+            # Start the export process
+            response = self.session.get(f"{self.config.api.base_url}/export/{format}")
+            response.raise_for_status()
+            api_response = response.json()
+            
+            if api_response.get("success"):
+                return {
+                    "status": "success",
+                    "export_id": api_response.get("export_id"),
+                    "message": api_response.get("message", f"Export to {format.upper()} started")
+                }
+            else:
+                return {
+                    "status": "error",
+                    "message": api_response.get("message", "Export failed")
+                }
+                
+        except Exception as e:
+            st.error(f"Error starting export: {str(e)}")
+            return {"status": "error", "message": str(e)}
+    
+    def download_export_file(self, export_id: str) -> bytes:
+        """Download exported file by export ID"""
+        try:
+            response = self.session.get(f"{self.config.api.base_url}/download/{export_id}")
+            response.raise_for_status()
+            return response.content
+        except Exception as e:
+            st.error(f"Error downloading file: {str(e)}")
+            return None

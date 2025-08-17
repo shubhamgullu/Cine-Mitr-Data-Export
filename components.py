@@ -659,6 +659,492 @@ class UIComponents:
             if st.button("📊 View Analytics", key=f"analytics_{item.id}"):
                 st.info(f"Analytics for {item.name}")
     
+    def render_add_movie_form(self):
+        """Render add movie form with API integration"""
+        with st.form("add_movie_form", clear_on_submit=True):
+            st.markdown("### 🎬 Add New Movie")
+            st.info("💡 **Tip:** Fill in the required fields (*) and any additional details, then click **Add Movie** to create.")
+            
+            # Basic Information
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                title = st.text_input("Movie Title *", placeholder="Enter movie title")
+                genre = st.selectbox("Genre *", [
+                    "Action", "Adventure", "Comedy", "Drama", "Horror", 
+                    "Romance", "Sci-Fi", "Thriller", "Documentary", "Animation"
+                ])
+                director = st.text_input("Director", placeholder="Director name")
+                language = st.selectbox("Language", [
+                    "Hindi", "English", "Tamil", "Telugu", "Malayalam", 
+                    "Bengali", "Marathi", "Gujarati", "Punjabi", "Other"
+                ])
+            
+            with col2:
+                release_date = st.date_input("Release Date")
+                duration_minutes = st.number_input("Duration (minutes)", min_value=1, max_value=1000, value=120)
+                rating = st.selectbox("Rating", ["U", "U/A", "A", "S", "Not Rated"])
+                country = st.text_input("Country", value="India")
+                
+                # Status selection for new movie
+                status = st.selectbox("Status", ["New", "Ready", "In Progress", "Uploaded", "Processing", "Failed"], index=0)
+            
+            # Additional Information
+            st.markdown("#### Additional Details")
+            description = st.text_area("Description", placeholder="Brief description of the movie", max_chars=2000)
+            
+            # Cast (multi-line input)
+            cast_input = st.text_area("Cast (one name per line)", placeholder="Actor 1\nActor 2\nActor 3...")
+            
+            # File upload for poster
+            poster_file = st.file_uploader("Movie Poster", type=['jpg', 'jpeg', 'png'], help="Upload movie poster image")
+            
+            # Submit button
+            col1, col2, col3 = st.columns([1, 1, 1])
+            with col2:
+                submit_button = st.form_submit_button("🎬 Add Movie", use_container_width=True, type="primary")
+            
+            if submit_button:
+                # Validate required fields
+                if not title or not genre:
+                    st.error("❌ Please fill in all required fields (marked with *)")
+                    return False
+                
+                # Process cast list
+                cast_list = []
+                if cast_input:
+                    cast_list = [name.strip() for name in cast_input.split('\n') if name.strip()]
+                
+                # Prepare movie data
+                movie_data = {
+                    "title": title,
+                    "genre": genre,
+                    "release_date": release_date.isoformat() if release_date else None,
+                    "duration_minutes": duration_minutes,
+                    "description": description if description else None,
+                    "director": director if director else None,
+                    "cast": cast_list if cast_list else None,
+                    "rating": rating if rating != "Not Rated" else None,
+                    "language": language,
+                    "country": country,
+                    "status": status
+                }
+                
+                # Call API to create movie
+                success = self._create_movie_via_api(movie_data)
+                
+                if success:
+                    st.success(f"🎉 **{title}** added successfully!")
+                    st.balloons()
+                    return True
+                else:
+                    st.error("❌ Failed to add movie. Please try again.")
+                    return False
+        
+        return False
+    
+    def _create_movie_via_api(self, movie_data: dict) -> bool:
+        """Create movie via API call"""
+        try:
+            import requests
+            import json
+            
+            # API endpoint
+            api_url = f"{self.config.api.base_url}/movies"
+            headers = self.config.api.get_headers()
+            
+            # Make API call
+            response = requests.post(
+                api_url,
+                json=movie_data,
+                headers=headers,
+                timeout=self.config.api.timeout
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                if result.get("success"):
+                    # Clear any cached data to refresh the movies list
+                    if hasattr(self.api_service, 'refresh_data'):
+                        self.api_service.refresh_data()
+                    return True
+            
+            return False
+            
+        except Exception as e:
+            st.error(f"API Error: {str(e)}")
+            return False
+    
+    def render_movies_list_with_checkbox(self, movies_list: List = None):
+        """Render movies list with checkboxes for bulk operations"""
+        st.markdown("### 🎬 Movies Management")
+        
+        # Action buttons
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            # Export format selection
+            export_format = st.selectbox("Export Format", ["csv", "json", "xlsx"], index=0, key="export_format")
+            
+            if st.button("📤 Export Selected", key="export_movies"):
+                selected_movie_ids = [
+                    k.replace("movie_select_", "") 
+                    for k in st.session_state.keys() 
+                    if k.startswith("movie_select_") and st.session_state[k]
+                ]
+                
+                if len(selected_movie_ids) > 0:
+                    # Start export process
+                    with st.spinner(f"🚀 Exporting {len(selected_movie_ids)} movies to {export_format.upper()}..."):
+                        result = self.api_service.export_movies(format=export_format, selected_ids=selected_movie_ids)
+                        
+                        if result["status"] == "success":
+                            st.success(f"✅ {result['message']}")
+                            
+                            # Try to download the file after a short delay
+                            import time
+                            time.sleep(2)  # Wait for export to complete
+                            
+                            export_id = result.get("export_id")
+                            if export_id:
+                                file_content = self.api_service.download_export_file(export_id)
+                                if file_content:
+                                    # Provide download button
+                                    st.download_button(
+                                        label=f"⬇️ Download {export_format.upper()} File",
+                                        data=file_content,
+                                        file_name=f"movies_export.{export_format}",
+                                        mime=self._get_mime_type(export_format),
+                                        key="download_export"
+                                    )
+                                else:
+                                    st.error("❌ Failed to download export file")
+                        else:
+                            st.error(f"❌ Export failed: {result['message']}")
+                else:
+                    st.warning("⚠️ Please select movies to export")
+        
+        with col2:
+            if st.button("🗑️ Delete Selected", key="delete_movies"):
+                selected_count = len([k for k in st.session_state.keys() if k.startswith("movie_select_") and st.session_state[k]])
+                if selected_count > 0:
+                    st.error(f"🗑️ Deleting {selected_count} selected movies...")
+                else:
+                    st.warning("⚠️ Please select movies to delete")
+        
+        with col3:
+            if st.button("📊 Bulk Edit", key="bulk_edit_movies"):
+                st.info("📝 Bulk edit functionality")
+        
+        with col4:
+            if st.button("🔄 Refresh", key="refresh_movies"):
+                # Clear any cached data and force refresh
+                st.cache_data.clear()
+                st.success("🔄 Movies list refreshed!")
+                st.rerun()
+        
+        # Movies table with checkboxes
+        if not movies_list:
+            # Fetch movies from API service
+            movies_list = self.api_service.get_movies_list()
+        
+        # Table header
+        header_cols = st.columns([0.5, 3, 1.5, 1, 1.5, 1.5, 0.5])
+        headers = ["☑️", "Movie Title", "Genre", "Duration", "Status", "Release Date", "Actions"]
+        
+        for col, header in zip(header_cols, headers):
+            with col:
+                st.markdown(f"**{header}**")
+        
+        # Table rows
+        for movie in movies_list:
+            cols = st.columns([0.5, 3, 1.5, 1, 1.5, 1.5, 0.5])
+            
+            with cols[0]:
+                st.checkbox("", key=f"movie_select_{movie['id']}", label_visibility="collapsed")
+            
+            with cols[1]:
+                st.markdown(f"**{movie['title']}**")
+            
+            with cols[2]:
+                st.write(movie['genre'])
+            
+            with cols[3]:
+                duration = movie.get('duration_minutes', movie.get('duration', 0))
+                st.write(f"{duration} min")
+            
+            with cols[4]:
+                status = movie['status']
+                status_class = f"status-{status.lower().replace(' ', '-')}"
+                st.markdown(f'<span class="{status_class}">{status}</span>', unsafe_allow_html=True)
+            
+            with cols[5]:
+                release_date = movie.get('release_date')
+                if release_date:
+                    # Handle datetime strings - just take the date part
+                    if 'T' in str(release_date):
+                        release_date = release_date.split('T')[0]
+                    st.write(release_date)
+                else:
+                    st.write("N/A")
+            
+            with cols[6]:
+                if st.button("⋮", key=f"movie_action_{movie['id']}", help="Movie actions"):
+                    self._handle_movie_actions(movie)
+    
+    def _handle_movie_actions(self, movie: Dict):
+        """Handle movie action menu"""
+        # Store selected movie in session state for editing
+        st.session_state.selected_movie_for_edit = movie
+        st.session_state.show_edit_movie_modal = True
+        st.rerun()
+    
+    def _get_mime_type(self, format: str) -> str:
+        """Get MIME type for export format"""
+        mime_types = {
+            "csv": "text/csv",
+            "json": "application/json",
+            "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        }
+        return mime_types.get(format, "application/octet-stream")
+    
+    def render_edit_movie_form(self, movie_data: Dict):
+        """Render edit movie form with pre-populated data"""
+        with st.form("edit_movie_form", clear_on_submit=False):
+            st.markdown(f"### ✏️ Edit Movie: {movie_data.get('title', 'Unknown')}")
+            st.info("💡 **Tip:** All fields are pre-filled with current data. Make your changes and click **Update Movie** to save.")
+            
+            # Basic Information with pre-filled values
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                title = st.text_input("Movie Title *", value=movie_data.get('title', ''), placeholder="Enter movie title")
+                
+                # Genre selection with current value
+                genres = ["Action", "Adventure", "Comedy", "Drama", "Horror", 
+                         "Romance", "Sci-Fi", "Thriller", "Documentary", "Animation"]
+                current_genre = movie_data.get('genre', 'Drama')
+                genre_index = genres.index(current_genre) if current_genre in genres else 0
+                genre = st.selectbox("Genre *", genres, index=genre_index)
+                
+                director = st.text_input("Director", value=movie_data.get('director', ''), placeholder="Director name")
+                
+                # Language selection with current value
+                languages = ["Hindi", "English", "Tamil", "Telugu", "Malayalam", 
+                           "Bengali", "Marathi", "Gujarati", "Punjabi", "Other"]
+                current_language = movie_data.get('language', 'Hindi')
+                language_index = languages.index(current_language) if current_language in languages else 0
+                language = st.selectbox("Language", languages, index=language_index)
+            
+            with col2:
+                # Release date with current value
+                from datetime import datetime, date
+                current_release_date = movie_data.get('release_date', '')
+                if current_release_date:
+                    try:
+                        if isinstance(current_release_date, str):
+                            release_date_obj = datetime.fromisoformat(current_release_date.replace('Z', '+00:00')).date()
+                        else:
+                            release_date_obj = current_release_date
+                    except:
+                        release_date_obj = date.today()
+                else:
+                    release_date_obj = date.today()
+                
+                release_date = st.date_input("Release Date", value=release_date_obj)
+                
+                duration_minutes = st.number_input(
+                    "Duration (minutes)", 
+                    min_value=1, 
+                    max_value=1000, 
+                    value=movie_data.get('duration', 120)
+                )
+                
+                # Rating selection with current value
+                ratings = ["U", "U/A", "A", "S", "Not Rated"]
+                current_rating = movie_data.get('rating', 'Not Rated')
+                rating_index = ratings.index(current_rating) if current_rating in ratings else 4
+                rating = st.selectbox("Rating", ratings, index=rating_index)
+                
+                country = st.text_input("Country", value=movie_data.get('country', 'India'))
+                
+                # Status selection with current value
+                statuses = ["Ready", "Uploaded", "In Progress", "New", "Failed", "Processing"]
+                current_status = movie_data.get('status', 'New')
+                status_index = statuses.index(current_status) if current_status in statuses else 3
+                status = st.selectbox("Status *", statuses, index=status_index)
+            
+            # Additional Information
+            st.markdown("#### Additional Details")
+            description = st.text_area(
+                "Description", 
+                value=movie_data.get('description', ''),
+                placeholder="Brief description of the movie", 
+                max_chars=2000
+            )
+            
+            # Cast (convert list back to multi-line string)
+            current_cast = movie_data.get('cast', [])
+            cast_text = '\n'.join(current_cast) if isinstance(current_cast, list) else str(current_cast)
+            cast_input = st.text_area("Cast (one name per line)", value=cast_text, placeholder="Actor 1\nActor 2\nActor 3...")
+            
+            # File upload for poster
+            poster_file = st.file_uploader("Update Movie Poster", type=['jpg', 'jpeg', 'png'], help="Upload new movie poster image")
+            
+            # Action buttons
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                update_button = st.form_submit_button("✏️ Update Movie", use_container_width=True, type="primary")
+            
+            with col2:
+                cancel_button = st.form_submit_button("❌ Cancel", use_container_width=True)
+            
+            with col3:
+                delete_button = st.form_submit_button("🗑️ Delete Movie", use_container_width=True)
+            
+            with col4:
+                duplicate_button = st.form_submit_button("📋 Duplicate", use_container_width=True)
+            
+            # Handle form submissions
+            if cancel_button:
+                st.session_state.show_edit_movie_modal = False
+                st.session_state.confirm_delete = False  # Reset delete confirmation
+                st.info("✅ Edit cancelled. No changes were made.")
+                st.rerun()
+            
+            if delete_button:
+                if st.session_state.get('confirm_delete', False):
+                    success = self._delete_movie_via_api(movie_data['id'])
+                    if success:
+                        st.success(f"🗑️ **{movie_data.get('title', 'Movie')}** deleted successfully!")
+                        st.session_state.show_edit_movie_modal = False
+                        st.session_state.confirm_delete = False  # Reset confirmation
+                        st.rerun()
+                    else:
+                        st.error("❌ Failed to delete movie.")
+                else:
+                    st.session_state.confirm_delete = True
+                    st.warning(f"⚠️ Click Delete again to confirm deletion of **{movie_data.get('title', 'this movie')}**.")
+                    st.rerun()
+            
+            if duplicate_button:
+                # Create a copy with modified title
+                duplicate_data = movie_data.copy()
+                duplicate_data['title'] = f"{duplicate_data.get('title', 'Copy')} (Copy)"
+                if 'id' in duplicate_data:
+                    del duplicate_data['id']  # Remove ID for new movie
+                
+                success = self._create_movie_via_api(duplicate_data)
+                if success:
+                    st.success(f"📋 **{duplicate_data.get('title', 'Movie')}** duplicated successfully!")
+                    st.session_state.show_edit_movie_modal = False
+                    st.balloons()
+                    st.rerun()
+                else:
+                    st.error("❌ Failed to duplicate movie.")
+            
+            if update_button:
+                # Validate required fields
+                if not title or not genre:
+                    st.error("❌ Please fill in all required fields (marked with *)")
+                    return False
+                
+                # Process cast list
+                cast_list = []
+                if cast_input:
+                    cast_list = [name.strip() for name in cast_input.split('\n') if name.strip()]
+                
+                # Prepare updated movie data
+                updated_movie_data = {
+                    "title": title,
+                    "genre": genre,
+                    "release_date": release_date.isoformat() if release_date else None,
+                    "duration_minutes": duration_minutes,
+                    "description": description if description else None,
+                    "director": director if director else None,
+                    "cast": cast_list if cast_list else None,
+                    "rating": rating if rating != "Not Rated" else None,
+                    "language": language,
+                    "country": country,
+                    "status": status
+                }
+                
+                # Call API to update movie
+                success = self._update_movie_via_api(movie_data['id'], updated_movie_data)
+                
+                if success:
+                    st.success(f"✅ **{title}** updated successfully!")
+                    st.session_state.show_edit_movie_modal = False
+                    st.session_state.confirm_delete = False  # Reset delete confirmation
+                    st.balloons()
+                    st.rerun()
+                else:
+                    st.error("❌ Failed to update movie. Please try again.")
+        
+        return False
+    
+    def _update_movie_via_api(self, movie_id: str, movie_data: dict) -> bool:
+        """Update movie via API call"""
+        try:
+            import requests
+            
+            # API endpoint for updating movie
+            api_url = f"{self.config.api.base_url}/movies/{movie_id}"
+            headers = self.config.api.get_headers()
+            
+            # Make API call
+            response = requests.put(
+                api_url,
+                json=movie_data,
+                headers=headers,
+                timeout=self.config.api.timeout
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                if result.get("success"):
+                    # Clear any cached data to refresh the movies list
+                    if hasattr(self.api_service, 'refresh_data'):
+                        self.api_service.refresh_data()
+                    return True
+            
+            return False
+            
+        except Exception as e:
+            st.error(f"API Error: {str(e)}")
+            return False
+    
+    def _delete_movie_via_api(self, movie_id: str) -> bool:
+        """Delete movie via API call"""
+        try:
+            import requests
+            
+            # API endpoint for deleting movie
+            api_url = f"{self.config.api.base_url}/movies/{movie_id}"
+            headers = self.config.api.get_headers()
+            
+            # Make API call
+            response = requests.delete(
+                api_url,
+                headers=headers,
+                timeout=self.config.api.timeout
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                if result.get("success"):
+                    # Clear any cached data to refresh the movies list
+                    if hasattr(self.api_service, 'refresh_data'):
+                        self.api_service.refresh_data()
+                    return True
+            
+            return False
+            
+        except Exception as e:
+            st.error(f"API Error: {str(e)}")
+            return False
+    
     def render_footer(self):
         """Render enhanced footer"""
         from datetime import datetime

@@ -27,7 +27,7 @@ def main():
     if selected_page == "dashboard" or selected_page is None:
         render_dashboard_page(ui, api_service)
     elif selected_page == "movies":
-        render_movies_page()
+        render_movies_page(ui)
     elif selected_page == "content_items":
         render_content_items_page()
     elif selected_page == "upload_pipeline":
@@ -76,22 +76,55 @@ def render_dashboard_page(ui: UIComponents, api_service: APIService):
     # Enhanced footer
     ui.render_footer()
 
-def render_movies_page():
-    """Render movies management page"""
+def render_movies_page(ui: UIComponents = None):
+    """Render enhanced movies management page with form and API integration"""
     st.header("🎬 Movies Management")
-    st.info("Movies page - API integration ready for CRUD operations")
     
-    # Add movie management functionality here
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        if st.button("Add New Movie", use_container_width=True):
-            st.success("Add movie API call would go here")
-    with col2:
-        if st.button("Import Movies", use_container_width=True):
-            st.success("Import movies API call would go here")
-    with col3:
-        if st.button("Export Movies", use_container_width=True):
-            st.success("Export movies API call would go here")
+    # Check if edit modal should be shown
+    if st.session_state.get('show_edit_movie_modal', False) and ui:
+        selected_movie = st.session_state.get('selected_movie_for_edit')
+        if selected_movie:
+            # Render edit form as overlay
+            with st.container():
+                st.markdown("---")
+                ui.render_edit_movie_form(selected_movie)
+                st.markdown("---")
+    else:
+        # Normal tab-based interface
+        tab1, tab2 = st.tabs(["📋 Movies List", "➕ Add New Movie"])
+        
+        with tab1:
+            if ui:
+                ui.render_movies_list_with_checkbox()
+            else:
+                st.info("Movies list - API integration ready")
+        
+        with tab2:
+            if ui:
+                # Render the add movie form
+                movie_added = ui.render_add_movie_form()
+                
+                if movie_added:
+                    # Switch to movies list tab after successful addition
+                    st.info("Movie added! Switch to 'Movies List' tab to see the updated list.")
+            else:
+                st.info("Add movie form - API integration ready")
+        
+        # Additional functionality
+        with st.expander("🔧 Advanced Options"):
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                if st.button("📥 Import Movies", use_container_width=True):
+                    st.success("📥 Bulk import functionality")
+            
+            with col2:
+                if st.button("📊 Generate Report", use_container_width=True):
+                    st.success("📊 Movies analytics report")
+            
+            with col3:
+                if st.button("🔄 Sync with Database", use_container_width=True):
+                    st.success("🔄 Database synchronization")
 
 def render_content_items_page():
     """Render content items management page"""

@@ -1,0 +1,445 @@
+2025-08-18 01:47:59 | __main__ | INFO | logger.py:78 | Logger initialized for __main__
+2025-08-18 01:47:59 | __main__ | INFO | init_database.py:93 | Starting database initialization...
+2025-08-18 01:47:59 | __main__ | INFO | init_database.py:103 | Database connection successful
+2025-08-18 01:47:59 | __main__ | INFO | init_database.py:111 | Reading database schema...
+2025-08-18 01:47:59 | __main__ | INFO | init_database.py:114 | Executing database schema...
+2025-08-18 01:47:59 | __main__ | INFO | init_database.py:72 | Executing statement 1/107
+2025-08-18 01:47:59 | __main__ | INFO | init_database.py:72 | Executing statement 2/107
+2025-08-18 01:47:59 | __main__ | INFO | init_database.py:72 | Executing statement 3/107
+2025-08-18 01:47:59 | __main__ | INFO | init_database.py:72 | Executing statement 4/107
+2025-08-18 01:47:59 | __main__ | INFO | init_database.py:72 | Executing statement 5/107
+2025-08-18 01:47:59 | __main__ | INFO | init_database.py:72 | Executing statement 6/107
+2025-08-18 01:47:59 | __main__ | INFO | init_database.py:72 | Executing statement 7/107
+2025-08-18 01:47:59 | __main__ | INFO | init_database.py:72 | Executing statement 8/107
+2025-08-18 01:47:59 | __main__ | INFO | init_database.py:72 | Executing statement 9/107
+2025-08-18 01:47:59 | __main__ | INFO | init_database.py:72 | Executing statement 10/107
+2025-08-18 01:47:59 | __main__ | INFO | init_database.py:72 | Executing statement 11/107
+2025-08-18 01:47:59 | __main__ | INFO | init_database.py:72 | Executing statement 12/107
+2025-08-18 01:48:00 | __main__ | INFO | init_database.py:72 | Executing statement 13/107
+2025-08-18 01:48:00 | __main__ | INFO | init_database.py:72 | Executing statement 14/107
+2025-08-18 01:48:00 | __main__ | INFO | init_database.py:72 | Executing statement 15/107
+2025-08-18 01:48:00 | __main__ | INFO | init_database.py:72 | Executing statement 16/107
+2025-08-18 01:48:00 | __main__ | INFO | init_database.py:72 | Executing statement 17/107
+2025-08-18 01:48:00 | __main__ | INFO | init_database.py:72 | Executing statement 18/107
+2025-08-18 01:48:00 | __main__ | INFO | init_database.py:72 | Executing statement 19/107
+2025-08-18 01:48:00 | __main__ | INFO | init_database.py:72 | Executing statement 20/107
+2025-08-18 01:48:00 | __main__ | INFO | init_database.py:72 | Executing statement 21/107
+2025-08-18 01:48:00 | __main__ | ERROR | init_database.py:76 | Error executing statement 21: (pymysql.err.OperationalError) (1050, "Table 'system_config' already exists")
+[SQL: CREATE TABLE system_config (
+id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+config_key VARCHAR(100) NOT NULL UNIQUE,
+config_value TEXT NOT NULL,
+data_type ENUM('string', 'number', 'boolean', 'json') NOT NULL DEFAULT 'string',
+description TEXT NULL,
+is_public BOOLEAN NOT NULL DEFAULT FALSE,
+updated_by VARCHAR(36) NULL,
+created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+);]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2025-08-18 01:48:00 | __main__ | ERROR | init_database.py:77 | Statement: CREATE TABLE system_config (
+id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+config_key VARCHAR(100) NOT NULL UNIQUE,
+config_value TEXT NOT NULL,
+data_type ENUM('string', 'number', 'boolean', 'json') NOT...
+2025-08-18 01:48:00 | __main__ | WARNING | init_database.py:82 | Skipping existing object in statement 21
+2025-08-18 01:48:00 | __main__ | INFO | init_database.py:72 | Executing statement 22/107
+2025-08-18 01:48:00 | __main__ | ERROR | init_database.py:76 | Error executing statement 22: (pymysql.err.OperationalError) (1050, "Table 'audit_logs' already exists")
+[SQL: CREATE TABLE audit_logs (
+id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+table_name VARCHAR(100) NOT NULL,
+record_id VARCHAR(36) NOT NULL,
+action ENUM('INSERT', 'UPDATE', 'DELETE') NOT NULL,
+old_values JSON NULL,
+new_values JSON NULL,
+changed_by VARCHAR(36) NULL,
+change_reason VARCHAR(255) NULL,
+ip_address VARCHAR(45) NULL,
+user_agent TEXT NULL,
+created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+FOREIGN KEY (changed_by) REFERENCES users(id) ON DELETE SET NULL
+);]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2025-08-18 01:48:00 | __main__ | ERROR | init_database.py:77 | Statement: CREATE TABLE audit_logs (
+id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+table_name VARCHAR(100) NOT NULL,
+record_id VARCHAR(36) NOT NULL,
+action ENUM('INSERT', 'UPDATE', 'DELETE') NOT NULL,
+old_values ...
+2025-08-18 01:48:00 | __main__ | WARNING | init_database.py:82 | Skipping existing object in statement 22
+2025-08-18 01:48:00 | __main__ | INFO | init_database.py:72 | Executing statement 23/107
+2025-08-18 01:48:00 | __main__ | INFO | init_database.py:72 | Executing statement 24/107
+2025-08-18 01:48:01 | __main__ | INFO | init_database.py:72 | Executing statement 25/107
+2025-08-18 01:48:01 | __main__ | INFO | init_database.py:72 | Executing statement 26/107
+2025-08-18 01:48:01 | __main__ | INFO | init_database.py:72 | Executing statement 27/107
+2025-08-18 01:48:01 | __main__ | INFO | init_database.py:72 | Executing statement 28/107
+2025-08-18 01:48:01 | __main__ | INFO | init_database.py:72 | Executing statement 29/107
+2025-08-18 01:48:01 | __main__ | INFO | init_database.py:72 | Executing statement 30/107
+2025-08-18 01:48:01 | __main__ | INFO | init_database.py:72 | Executing statement 31/107
+2025-08-18 01:48:01 | __main__ | INFO | init_database.py:72 | Executing statement 32/107
+2025-08-18 01:48:01 | __main__ | INFO | init_database.py:72 | Executing statement 33/107
+2025-08-18 01:48:01 | __main__ | INFO | init_database.py:72 | Executing statement 34/107
+2025-08-18 01:48:01 | __main__ | INFO | init_database.py:72 | Executing statement 35/107
+2025-08-18 01:48:01 | __main__ | INFO | init_database.py:72 | Executing statement 36/107
+2025-08-18 01:48:01 | __main__ | INFO | init_database.py:72 | Executing statement 37/107
+2025-08-18 01:48:02 | __main__ | INFO | init_database.py:72 | Executing statement 38/107
+2025-08-18 01:48:02 | __main__ | INFO | init_database.py:72 | Executing statement 39/107
+2025-08-18 01:48:02 | __main__ | INFO | init_database.py:72 | Executing statement 40/107
+2025-08-18 01:48:02 | __main__ | INFO | init_database.py:72 | Executing statement 41/107
+2025-08-18 01:48:02 | __main__ | INFO | init_database.py:72 | Executing statement 42/107
+2025-08-18 01:48:02 | __main__ | INFO | init_database.py:72 | Executing statement 43/107
+2025-08-18 01:48:02 | __main__ | INFO | init_database.py:72 | Executing statement 44/107
+2025-08-18 01:48:02 | __main__ | INFO | init_database.py:72 | Executing statement 45/107
+2025-08-18 01:48:02 | __main__ | INFO | init_database.py:72 | Executing statement 46/107
+2025-08-18 01:48:02 | __main__ | INFO | init_database.py:72 | Executing statement 47/107
+2025-08-18 01:48:03 | __main__ | INFO | init_database.py:72 | Executing statement 48/107
+2025-08-18 01:48:03 | __main__ | INFO | init_database.py:72 | Executing statement 49/107
+2025-08-18 01:48:03 | __main__ | INFO | init_database.py:72 | Executing statement 50/107
+2025-08-18 01:48:03 | __main__ | INFO | init_database.py:72 | Executing statement 51/107
+2025-08-18 01:48:03 | __main__ | INFO | init_database.py:72 | Executing statement 52/107
+2025-08-18 01:48:03 | __main__ | INFO | init_database.py:72 | Executing statement 53/107
+2025-08-18 01:48:04 | __main__ | INFO | init_database.py:72 | Executing statement 54/107
+2025-08-18 01:48:04 | __main__ | INFO | init_database.py:72 | Executing statement 55/107
+2025-08-18 01:48:04 | __main__ | INFO | init_database.py:72 | Executing statement 56/107
+2025-08-18 01:48:04 | __main__ | INFO | init_database.py:72 | Executing statement 57/107
+2025-08-18 01:48:04 | __main__ | INFO | init_database.py:72 | Executing statement 58/107
+2025-08-18 01:48:04 | __main__ | INFO | init_database.py:72 | Executing statement 59/107
+2025-08-18 01:48:04 | __main__ | INFO | init_database.py:72 | Executing statement 60/107
+2025-08-18 01:48:04 | __main__ | INFO | init_database.py:72 | Executing statement 61/107
+2025-08-18 01:48:04 | __main__ | INFO | init_database.py:72 | Executing statement 62/107
+2025-08-18 01:48:04 | __main__ | INFO | init_database.py:72 | Executing statement 63/107
+2025-08-18 01:48:04 | __main__ | INFO | init_database.py:72 | Executing statement 64/107
+2025-08-18 01:48:04 | __main__ | INFO | init_database.py:72 | Executing statement 65/107
+2025-08-18 01:48:04 | __main__ | INFO | init_database.py:72 | Executing statement 66/107
+2025-08-18 01:48:04 | __main__ | INFO | init_database.py:72 | Executing statement 67/107
+2025-08-18 01:48:04 | __main__ | INFO | init_database.py:72 | Executing statement 68/107
+2025-08-18 01:48:04 | __main__ | INFO | init_database.py:72 | Executing statement 69/107
+2025-08-18 01:48:04 | __main__ | INFO | init_database.py:72 | Executing statement 70/107
+2025-08-18 01:48:04 | __main__ | INFO | init_database.py:72 | Executing statement 71/107
+2025-08-18 01:48:04 | __main__ | INFO | init_database.py:72 | Executing statement 72/107
+2025-08-18 01:48:04 | __main__ | INFO | init_database.py:72 | Executing statement 73/107
+2025-08-18 01:48:04 | __main__ | INFO | init_database.py:72 | Executing statement 74/107
+2025-08-18 01:48:04 | __main__ | INFO | init_database.py:72 | Executing statement 75/107
+2025-08-18 01:48:04 | __main__ | INFO | init_database.py:72 | Executing statement 76/107
+2025-08-18 01:48:04 | __main__ | INFO | init_database.py:72 | Executing statement 77/107
+2025-08-18 01:48:04 | __main__ | INFO | init_database.py:72 | Executing statement 78/107
+2025-08-18 01:48:04 | __main__ | INFO | init_database.py:72 | Executing statement 79/107
+2025-08-18 01:48:04 | __main__ | INFO | init_database.py:72 | Executing statement 80/107
+2025-08-18 01:48:04 | __main__ | INFO | init_database.py:72 | Executing statement 81/107
+2025-08-18 01:48:04 | __main__ | INFO | init_database.py:72 | Executing statement 82/107
+2025-08-18 01:48:05 | __main__ | INFO | init_database.py:72 | Executing statement 83/107
+2025-08-18 01:48:05 | __main__ | INFO | init_database.py:72 | Executing statement 84/107
+2025-08-18 01:48:05 | __main__ | INFO | init_database.py:72 | Executing statement 85/107
+2025-08-18 01:48:05 | __main__ | INFO | init_database.py:72 | Executing statement 86/107
+2025-08-18 01:48:05 | __main__ | INFO | init_database.py:72 | Executing statement 87/107
+2025-08-18 01:48:05 | __main__ | INFO | init_database.py:72 | Executing statement 88/107
+2025-08-18 01:48:05 | __main__ | INFO | init_database.py:72 | Executing statement 89/107
+2025-08-18 01:48:05 | __main__ | INFO | init_database.py:72 | Executing statement 90/107
+2025-08-18 01:48:05 | __main__ | ERROR | init_database.py:76 | Error executing statement 90: (pymysql.err.ProgrammingError) (1064, "You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '//\nCREATE TRIGGER tr_users_audit_update AFTER UPDATE ON users\nFOR EACH ROW\nBEGIN' at line 12")
+[SQL: CREATE TRIGGER tr_users_audit_insert AFTER INSERT ON users
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, new_values, changed_by)
+VALUES ('users', NEW.id, 'INSERT', JSON_OBJECT(
+'username', NEW.username,
+'email', NEW.email,
+'full_name', NEW.full_name,
+'role', NEW.role,
+'is_active', NEW.is_active
+), NEW.id);
+END//
+CREATE TRIGGER tr_users_audit_update AFTER UPDATE ON users
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, old_values, new_values, changed_by)
+VALUES ('users', NEW.id, 'UPDATE',
+JSON_OBJECT(
+'username', OLD.username,
+'email', OLD.email,
+'full_name', OLD.full_name,
+'role', OLD.role,
+'is_active', OLD.is_active
+),
+JSON_OBJECT(
+'username', NEW.username,
+'email', NEW.email,
+'full_name', NEW.full_name,
+'role', NEW.role,
+'is_active', NEW.is_active
+),
+NEW.id);
+END//
+CREATE TRIGGER tr_movies_audit_insert AFTER INSERT ON movies
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, new_values, changed_by)
+VALUES ('movies', NEW.id, 'INSERT', JSON_OBJECT(
+'title', NEW.title,
+'genre', NEW.genre,
+'status', NEW.status,
+'director', NEW.director
+), NEW.created_by);
+END//
+CREATE TRIGGER tr_movies_audit_update AFTER UPDATE ON movies
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, old_values, new_values, changed_by)
+VALUES ('movies', NEW.id, 'UPDATE',
+JSON_OBJECT(
+'title', OLD.title,
+'genre', OLD.genre,
+'status', OLD.status,
+'director', OLD.director
+),
+JSON_OBJECT(
+'title', NEW.title,
+'genre', NEW.genre,
+'status', NEW.status,
+'director', NEW.director
+),
+NEW.created_by);
+END//
+CREATE TRIGGER tr_content_audit_insert AFTER INSERT ON content_items
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, new_values, changed_by)
+VALUES ('content_items', NEW.id, 'INSERT', JSON_OBJECT(
+'name', NEW.name,
+'content_type', NEW.content_type,
+'status', NEW.status,
+'priority', NEW.priority
+), NEW.created_by);
+END//
+CREATE TRIGGER tr_content_audit_update AFTER UPDATE ON content_items
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, old_values, new_values, changed_by)
+VALUES ('content_items', NEW.id, 'UPDATE',
+JSON_OBJECT(
+'name', OLD.name,
+'content_type', OLD.content_type,
+'status', OLD.status,
+'priority', OLD.priority
+),
+JSON_OBJECT(
+'name', NEW.name,
+'content_type', NEW.content_type,
+'status', NEW.status,
+'priority', NEW.priority
+),
+NEW.created_by);
+END//]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2025-08-18 01:48:05 | __main__ | ERROR | init_database.py:77 | Statement: CREATE TRIGGER tr_users_audit_insert AFTER INSERT ON users
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, new_values, changed_by)
+VALUES ('users', NEW.id, 'INSERT', JSON_OBJ...
+2025-08-18 01:48:05 | __main__ | ERROR | init_database.py:87 | Error executing SQL script: (pymysql.err.ProgrammingError) (1064, "You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '//\nCREATE TRIGGER tr_users_audit_update AFTER UPDATE ON users\nFOR EACH ROW\nBEGIN' at line 12")
+[SQL: CREATE TRIGGER tr_users_audit_insert AFTER INSERT ON users
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, new_values, changed_by)
+VALUES ('users', NEW.id, 'INSERT', JSON_OBJECT(
+'username', NEW.username,
+'email', NEW.email,
+'full_name', NEW.full_name,
+'role', NEW.role,
+'is_active', NEW.is_active
+), NEW.id);
+END//
+CREATE TRIGGER tr_users_audit_update AFTER UPDATE ON users
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, old_values, new_values, changed_by)
+VALUES ('users', NEW.id, 'UPDATE',
+JSON_OBJECT(
+'username', OLD.username,
+'email', OLD.email,
+'full_name', OLD.full_name,
+'role', OLD.role,
+'is_active', OLD.is_active
+),
+JSON_OBJECT(
+'username', NEW.username,
+'email', NEW.email,
+'full_name', NEW.full_name,
+'role', NEW.role,
+'is_active', NEW.is_active
+),
+NEW.id);
+END//
+CREATE TRIGGER tr_movies_audit_insert AFTER INSERT ON movies
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, new_values, changed_by)
+VALUES ('movies', NEW.id, 'INSERT', JSON_OBJECT(
+'title', NEW.title,
+'genre', NEW.genre,
+'status', NEW.status,
+'director', NEW.director
+), NEW.created_by);
+END//
+CREATE TRIGGER tr_movies_audit_update AFTER UPDATE ON movies
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, old_values, new_values, changed_by)
+VALUES ('movies', NEW.id, 'UPDATE',
+JSON_OBJECT(
+'title', OLD.title,
+'genre', OLD.genre,
+'status', OLD.status,
+'director', OLD.director
+),
+JSON_OBJECT(
+'title', NEW.title,
+'genre', NEW.genre,
+'status', NEW.status,
+'director', NEW.director
+),
+NEW.created_by);
+END//
+CREATE TRIGGER tr_content_audit_insert AFTER INSERT ON content_items
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, new_values, changed_by)
+VALUES ('content_items', NEW.id, 'INSERT', JSON_OBJECT(
+'name', NEW.name,
+'content_type', NEW.content_type,
+'status', NEW.status,
+'priority', NEW.priority
+), NEW.created_by);
+END//
+CREATE TRIGGER tr_content_audit_update AFTER UPDATE ON content_items
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, old_values, new_values, changed_by)
+VALUES ('content_items', NEW.id, 'UPDATE',
+JSON_OBJECT(
+'name', OLD.name,
+'content_type', OLD.content_type,
+'status', OLD.status,
+'priority', OLD.priority
+),
+JSON_OBJECT(
+'name', NEW.name,
+'content_type', NEW.content_type,
+'status', NEW.status,
+'priority', NEW.priority
+),
+NEW.created_by);
+END//]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2025-08-18 01:48:05 | __main__ | ERROR | init_database.py:121 | Database initialization failed: (pymysql.err.ProgrammingError) (1064, "You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '//\nCREATE TRIGGER tr_users_audit_update AFTER UPDATE ON users\nFOR EACH ROW\nBEGIN' at line 12")
+[SQL: CREATE TRIGGER tr_users_audit_insert AFTER INSERT ON users
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, new_values, changed_by)
+VALUES ('users', NEW.id, 'INSERT', JSON_OBJECT(
+'username', NEW.username,
+'email', NEW.email,
+'full_name', NEW.full_name,
+'role', NEW.role,
+'is_active', NEW.is_active
+), NEW.id);
+END//
+CREATE TRIGGER tr_users_audit_update AFTER UPDATE ON users
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, old_values, new_values, changed_by)
+VALUES ('users', NEW.id, 'UPDATE',
+JSON_OBJECT(
+'username', OLD.username,
+'email', OLD.email,
+'full_name', OLD.full_name,
+'role', OLD.role,
+'is_active', OLD.is_active
+),
+JSON_OBJECT(
+'username', NEW.username,
+'email', NEW.email,
+'full_name', NEW.full_name,
+'role', NEW.role,
+'is_active', NEW.is_active
+),
+NEW.id);
+END//
+CREATE TRIGGER tr_movies_audit_insert AFTER INSERT ON movies
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, new_values, changed_by)
+VALUES ('movies', NEW.id, 'INSERT', JSON_OBJECT(
+'title', NEW.title,
+'genre', NEW.genre,
+'status', NEW.status,
+'director', NEW.director
+), NEW.created_by);
+END//
+CREATE TRIGGER tr_movies_audit_update AFTER UPDATE ON movies
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, old_values, new_values, changed_by)
+VALUES ('movies', NEW.id, 'UPDATE',
+JSON_OBJECT(
+'title', OLD.title,
+'genre', OLD.genre,
+'status', OLD.status,
+'director', OLD.director
+),
+JSON_OBJECT(
+'title', NEW.title,
+'genre', NEW.genre,
+'status', NEW.status,
+'director', NEW.director
+),
+NEW.created_by);
+END//
+CREATE TRIGGER tr_content_audit_insert AFTER INSERT ON content_items
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, new_values, changed_by)
+VALUES ('content_items', NEW.id, 'INSERT', JSON_OBJECT(
+'name', NEW.name,
+'content_type', NEW.content_type,
+'status', NEW.status,
+'priority', NEW.priority
+), NEW.created_by);
+END//
+CREATE TRIGGER tr_content_audit_update AFTER UPDATE ON content_items
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, old_values, new_values, changed_by)
+VALUES ('content_items', NEW.id, 'UPDATE',
+JSON_OBJECT(
+'name', OLD.name,
+'content_type', OLD.content_type,
+'status', OLD.status,
+'priority', OLD.priority
+),
+JSON_OBJECT(
+'name', NEW.name,
+'content_type', NEW.content_type,
+'status', NEW.status,
+'priority', NEW.priority
+),
+NEW.created_by);
+END//]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2025-08-18 01:49:13 | __main__ | INFO | logger.py:78 | Logger initialized for __main__
+2025-08-18 01:49:13 | __main__ | INFO | init_database_simple.py:17 | Starting simple database initialization...
+2025-08-18 01:49:14 | __main__ | INFO | init_database_simple.py:27 | Database connection successful
+2025-08-18 01:49:14 | __main__ | INFO | init_database_simple.py:146 | Executing statement 1/8
+2025-08-18 01:49:14 | __main__ | INFO | init_database_simple.py:146 | Executing statement 2/8
+2025-08-18 01:49:14 | __main__ | INFO | init_database_simple.py:146 | Executing statement 3/8
+2025-08-18 01:49:14 | __main__ | INFO | init_database_simple.py:146 | Executing statement 4/8
+2025-08-18 01:49:14 | __main__ | INFO | init_database_simple.py:146 | Executing statement 5/8
+2025-08-18 01:49:14 | __main__ | INFO | init_database_simple.py:146 | Executing statement 6/8
+2025-08-18 01:49:14 | __main__ | INFO | init_database_simple.py:146 | Executing statement 7/8
+2025-08-18 01:49:14 | __main__ | INFO | init_database_simple.py:146 | Executing statement 8/8
+2025-08-18 01:49:14 | __main__ | INFO | init_database_simple.py:156 | Simple database initialization completed successfully
+2025-08-18 02:01:03 | __main__ | INFO | logger.py:78 | Logger initialized for __main__
+2025-08-18 02:15:08 | __main__ | INFO | logger.py:78 | Logger initialized for __main__
+2025-08-18 02:34:25 | __main__ | INFO | logger.py:78 | Logger initialized for __main__
+2025-08-18 02:36:42 | __main__ | INFO | logger.py:78 | Logger initialized for __main__
+2025-08-18 02:37:32 | __main__ | INFO | logger.py:78 | Logger initialized for __main__

@@ -132,3 +132,7 @@ def get_logger(name: str = None) -> logging.Logger:
     if name:
         return DashboardLogger(name).get_logger()
     return logger
+
+def setup_logger(name: str) -> logging.Logger:
+    """Setup logger for a specific component (alias for get_logger)"""
+    return get_logger(name)

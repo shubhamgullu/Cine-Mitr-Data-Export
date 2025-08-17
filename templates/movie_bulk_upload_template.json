@@ -1,0 +1,58 @@
+{
+  "movies": [
+    {
+      "title": "The Matrix",
+      "genre": "Sci-Fi",
+      "release_date": "1999-03-31",
+      "duration_minutes": 136,
+      "description": "A computer programmer discovers reality is a simulation and joins a rebellion to free humanity from machine control.",
+      "director": "The Wachowskis",
+      "rating": "R",
+      "language": "English",
+      "country": "USA",
+      "poster_url": "https://example.com/matrix_poster.jpg",
+      "trailer_url": "https://example.com/matrix_trailer.mp4",
+      "status": "Ready",
+      "imdb_id": "tt0133093",
+      "tmdb_id": "603",
+      "box_office_collection": 463.5,
+      "budget": 63
+    },
+    {
+      "title": "Dangal",
+      "genre": "Drama",
+      "release_date": "2016-12-23",
+      "duration_minutes": 161,
+      "description": "A former wrestler trains his daughters to become world-class wrestlers despite societal opposition.",
+      "director": "Nitesh Tiwari",
+      "rating": "PG",
+      "language": "Hindi",
+      "country": "India",
+      "poster_url": "https://example.com/dangal_poster.jpg",
+      "trailer_url": "https://example.com/dangal_trailer.mp4",
+      "status": "Ready",
+      "imdb_id": "tt5074352",
+      "tmdb_id": "364896",
+      "box_office_collection": 374.0,
+      "budget": 70
+    },
+    {
+      "title": "Avengers: Endgame",
+      "genre": "Action",
+      "release_date": "2019-04-26",
+      "duration_minutes": 181,
+      "description": "The Avengers assemble once more to reverse the damage caused by Thanos and restore balance to the universe.",
+      "director": "Anthony Russo, Joe Russo",
+      "rating": "PG-13",
+      "language": "English",
+      "country": "USA",
+      "poster_url": "https://example.com/endgame_poster.jpg",
+      "trailer_url": "https://example.com/endgame_trailer.mp4",
+      "status": "Ready",
+      "imdb_id": "tt4154796",
+      "tmdb_id": "299534",
+      "box_office_collection": 2797.8,
+      "budget": 356
+    }
+  ]
+}

@@ -1,0 +1,331 @@
+2025-08-18 01:48:00 | __main__ | ERROR | init_database.py:76 | Error executing statement 21: (pymysql.err.OperationalError) (1050, "Table 'system_config' already exists")
+[SQL: CREATE TABLE system_config (
+id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+config_key VARCHAR(100) NOT NULL UNIQUE,
+config_value TEXT NOT NULL,
+data_type ENUM('string', 'number', 'boolean', 'json') NOT NULL DEFAULT 'string',
+description TEXT NULL,
+is_public BOOLEAN NOT NULL DEFAULT FALSE,
+updated_by VARCHAR(36) NULL,
+created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+);]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2025-08-18 01:48:00 | __main__ | ERROR | init_database.py:77 | Statement: CREATE TABLE system_config (
+id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+config_key VARCHAR(100) NOT NULL UNIQUE,
+config_value TEXT NOT NULL,
+data_type ENUM('string', 'number', 'boolean', 'json') NOT...
+2025-08-18 01:48:00 | __main__ | ERROR | init_database.py:76 | Error executing statement 22: (pymysql.err.OperationalError) (1050, "Table 'audit_logs' already exists")
+[SQL: CREATE TABLE audit_logs (
+id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+table_name VARCHAR(100) NOT NULL,
+record_id VARCHAR(36) NOT NULL,
+action ENUM('INSERT', 'UPDATE', 'DELETE') NOT NULL,
+old_values JSON NULL,
+new_values JSON NULL,
+changed_by VARCHAR(36) NULL,
+change_reason VARCHAR(255) NULL,
+ip_address VARCHAR(45) NULL,
+user_agent TEXT NULL,
+created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+FOREIGN KEY (changed_by) REFERENCES users(id) ON DELETE SET NULL
+);]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2025-08-18 01:48:00 | __main__ | ERROR | init_database.py:77 | Statement: CREATE TABLE audit_logs (
+id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+table_name VARCHAR(100) NOT NULL,
+record_id VARCHAR(36) NOT NULL,
+action ENUM('INSERT', 'UPDATE', 'DELETE') NOT NULL,
+old_values ...
+2025-08-18 01:48:05 | __main__ | ERROR | init_database.py:76 | Error executing statement 90: (pymysql.err.ProgrammingError) (1064, "You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '//\nCREATE TRIGGER tr_users_audit_update AFTER UPDATE ON users\nFOR EACH ROW\nBEGIN' at line 12")
+[SQL: CREATE TRIGGER tr_users_audit_insert AFTER INSERT ON users
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, new_values, changed_by)
+VALUES ('users', NEW.id, 'INSERT', JSON_OBJECT(
+'username', NEW.username,
+'email', NEW.email,
+'full_name', NEW.full_name,
+'role', NEW.role,
+'is_active', NEW.is_active
+), NEW.id);
+END//
+CREATE TRIGGER tr_users_audit_update AFTER UPDATE ON users
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, old_values, new_values, changed_by)
+VALUES ('users', NEW.id, 'UPDATE',
+JSON_OBJECT(
+'username', OLD.username,
+'email', OLD.email,
+'full_name', OLD.full_name,
+'role', OLD.role,
+'is_active', OLD.is_active
+),
+JSON_OBJECT(
+'username', NEW.username,
+'email', NEW.email,
+'full_name', NEW.full_name,
+'role', NEW.role,
+'is_active', NEW.is_active
+),
+NEW.id);
+END//
+CREATE TRIGGER tr_movies_audit_insert AFTER INSERT ON movies
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, new_values, changed_by)
+VALUES ('movies', NEW.id, 'INSERT', JSON_OBJECT(
+'title', NEW.title,
+'genre', NEW.genre,
+'status', NEW.status,
+'director', NEW.director
+), NEW.created_by);
+END//
+CREATE TRIGGER tr_movies_audit_update AFTER UPDATE ON movies
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, old_values, new_values, changed_by)
+VALUES ('movies', NEW.id, 'UPDATE',
+JSON_OBJECT(
+'title', OLD.title,
+'genre', OLD.genre,
+'status', OLD.status,
+'director', OLD.director
+),
+JSON_OBJECT(
+'title', NEW.title,
+'genre', NEW.genre,
+'status', NEW.status,
+'director', NEW.director
+),
+NEW.created_by);
+END//
+CREATE TRIGGER tr_content_audit_insert AFTER INSERT ON content_items
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, new_values, changed_by)
+VALUES ('content_items', NEW.id, 'INSERT', JSON_OBJECT(
+'name', NEW.name,
+'content_type', NEW.content_type,
+'status', NEW.status,
+'priority', NEW.priority
+), NEW.created_by);
+END//
+CREATE TRIGGER tr_content_audit_update AFTER UPDATE ON content_items
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, old_values, new_values, changed_by)
+VALUES ('content_items', NEW.id, 'UPDATE',
+JSON_OBJECT(
+'name', OLD.name,
+'content_type', OLD.content_type,
+'status', OLD.status,
+'priority', OLD.priority
+),
+JSON_OBJECT(
+'name', NEW.name,
+'content_type', NEW.content_type,
+'status', NEW.status,
+'priority', NEW.priority
+),
+NEW.created_by);
+END//]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2025-08-18 01:48:05 | __main__ | ERROR | init_database.py:77 | Statement: CREATE TRIGGER tr_users_audit_insert AFTER INSERT ON users
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, new_values, changed_by)
+VALUES ('users', NEW.id, 'INSERT', JSON_OBJ...
+2025-08-18 01:48:05 | __main__ | ERROR | init_database.py:87 | Error executing SQL script: (pymysql.err.ProgrammingError) (1064, "You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '//\nCREATE TRIGGER tr_users_audit_update AFTER UPDATE ON users\nFOR EACH ROW\nBEGIN' at line 12")
+[SQL: CREATE TRIGGER tr_users_audit_insert AFTER INSERT ON users
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, new_values, changed_by)
+VALUES ('users', NEW.id, 'INSERT', JSON_OBJECT(
+'username', NEW.username,
+'email', NEW.email,
+'full_name', NEW.full_name,
+'role', NEW.role,
+'is_active', NEW.is_active
+), NEW.id);
+END//
+CREATE TRIGGER tr_users_audit_update AFTER UPDATE ON users
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, old_values, new_values, changed_by)
+VALUES ('users', NEW.id, 'UPDATE',
+JSON_OBJECT(
+'username', OLD.username,
+'email', OLD.email,
+'full_name', OLD.full_name,
+'role', OLD.role,
+'is_active', OLD.is_active
+),
+JSON_OBJECT(
+'username', NEW.username,
+'email', NEW.email,
+'full_name', NEW.full_name,
+'role', NEW.role,
+'is_active', NEW.is_active
+),
+NEW.id);
+END//
+CREATE TRIGGER tr_movies_audit_insert AFTER INSERT ON movies
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, new_values, changed_by)
+VALUES ('movies', NEW.id, 'INSERT', JSON_OBJECT(
+'title', NEW.title,
+'genre', NEW.genre,
+'status', NEW.status,
+'director', NEW.director
+), NEW.created_by);
+END//
+CREATE TRIGGER tr_movies_audit_update AFTER UPDATE ON movies
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, old_values, new_values, changed_by)
+VALUES ('movies', NEW.id, 'UPDATE',
+JSON_OBJECT(
+'title', OLD.title,
+'genre', OLD.genre,
+'status', OLD.status,
+'director', OLD.director
+),
+JSON_OBJECT(
+'title', NEW.title,
+'genre', NEW.genre,
+'status', NEW.status,
+'director', NEW.director
+),
+NEW.created_by);
+END//
+CREATE TRIGGER tr_content_audit_insert AFTER INSERT ON content_items
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, new_values, changed_by)
+VALUES ('content_items', NEW.id, 'INSERT', JSON_OBJECT(
+'name', NEW.name,
+'content_type', NEW.content_type,
+'status', NEW.status,
+'priority', NEW.priority
+), NEW.created_by);
+END//
+CREATE TRIGGER tr_content_audit_update AFTER UPDATE ON content_items
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, old_values, new_values, changed_by)
+VALUES ('content_items', NEW.id, 'UPDATE',
+JSON_OBJECT(
+'name', OLD.name,
+'content_type', OLD.content_type,
+'status', OLD.status,
+'priority', OLD.priority
+),
+JSON_OBJECT(
+'name', NEW.name,
+'content_type', NEW.content_type,
+'status', NEW.status,
+'priority', NEW.priority
+),
+NEW.created_by);
+END//]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2025-08-18 01:48:05 | __main__ | ERROR | init_database.py:121 | Database initialization failed: (pymysql.err.ProgrammingError) (1064, "You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '//\nCREATE TRIGGER tr_users_audit_update AFTER UPDATE ON users\nFOR EACH ROW\nBEGIN' at line 12")
+[SQL: CREATE TRIGGER tr_users_audit_insert AFTER INSERT ON users
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, new_values, changed_by)
+VALUES ('users', NEW.id, 'INSERT', JSON_OBJECT(
+'username', NEW.username,
+'email', NEW.email,
+'full_name', NEW.full_name,
+'role', NEW.role,
+'is_active', NEW.is_active
+), NEW.id);
+END//
+CREATE TRIGGER tr_users_audit_update AFTER UPDATE ON users
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, old_values, new_values, changed_by)
+VALUES ('users', NEW.id, 'UPDATE',
+JSON_OBJECT(
+'username', OLD.username,
+'email', OLD.email,
+'full_name', OLD.full_name,
+'role', OLD.role,
+'is_active', OLD.is_active
+),
+JSON_OBJECT(
+'username', NEW.username,
+'email', NEW.email,
+'full_name', NEW.full_name,
+'role', NEW.role,
+'is_active', NEW.is_active
+),
+NEW.id);
+END//
+CREATE TRIGGER tr_movies_audit_insert AFTER INSERT ON movies
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, new_values, changed_by)
+VALUES ('movies', NEW.id, 'INSERT', JSON_OBJECT(
+'title', NEW.title,
+'genre', NEW.genre,
+'status', NEW.status,
+'director', NEW.director
+), NEW.created_by);
+END//
+CREATE TRIGGER tr_movies_audit_update AFTER UPDATE ON movies
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, old_values, new_values, changed_by)
+VALUES ('movies', NEW.id, 'UPDATE',
+JSON_OBJECT(
+'title', OLD.title,
+'genre', OLD.genre,
+'status', OLD.status,
+'director', OLD.director
+),
+JSON_OBJECT(
+'title', NEW.title,
+'genre', NEW.genre,
+'status', NEW.status,
+'director', NEW.director
+),
+NEW.created_by);
+END//
+CREATE TRIGGER tr_content_audit_insert AFTER INSERT ON content_items
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, new_values, changed_by)
+VALUES ('content_items', NEW.id, 'INSERT', JSON_OBJECT(
+'name', NEW.name,
+'content_type', NEW.content_type,
+'status', NEW.status,
+'priority', NEW.priority
+), NEW.created_by);
+END//
+CREATE TRIGGER tr_content_audit_update AFTER UPDATE ON content_items
+FOR EACH ROW
+BEGIN
+INSERT INTO audit_logs (table_name, record_id, action, old_values, new_values, changed_by)
+VALUES ('content_items', NEW.id, 'UPDATE',
+JSON_OBJECT(
+'name', OLD.name,
+'content_type', OLD.content_type,
+'status', OLD.status,
+'priority', OLD.priority
+),
+JSON_OBJECT(
+'name', NEW.name,
+'content_type', NEW.content_type,
+'status', NEW.status,
+'priority', NEW.priority
+),
+NEW.created_by);
+END//]
+(Background on this error at: https://sqlalche.me/e/20/f405)

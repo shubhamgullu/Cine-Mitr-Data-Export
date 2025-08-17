@@ -185,6 +185,7 @@ class MovieCreateRequest(BaseModel):
     rating: Optional[str] = Field(None, max_length=10)
     language: Optional[str] = Field(None, max_length=50)
     country: Optional[str] = Field(None, max_length=100)
+    status: Optional[ContentStatus] = ContentStatus.NEW
 
 class BulkUpdateRequest(BaseModel):
     content_ids: List[str] = Field(..., min_items=1)
@@ -257,8 +258,8 @@ class TrendData(BaseModel):
     timeframe: str
 
 class ReportRequest(BaseModel):
-    report_type: str = Field(..., regex="^(summary|detailed|custom)$")
-    timeframe: str = Field(..., regex="^(1d|7d|30d|90d)$")
+    report_type: str = Field(..., pattern="^(summary|detailed|custom)$")
+    timeframe: str = Field(..., pattern="^(1d|7d|30d|90d)$")
     filters: Optional[Dict[str, Any]] = None
     format: ExportFormat = ExportFormat.JSON
     include_charts: bool = False

@@ -19,12 +19,25 @@ from pathlib import Path
 from models import *
 from services.dashboard_service import DashboardService
 from services.content_service import ContentService
-from services.upload_service import UploadService
-from services.analytics_service import AnalyticsService
-from services.storage_service import StorageService
+try:
+    from services.upload_service import UploadService
+except ImportError:
+    from services.upload_service_simple import UploadService
+try:
+    from services.analytics_service import AnalyticsService
+except ImportError:
+    from services.analytics_service_simple import AnalyticsService
+try:
+    from services.storage_service import StorageService
+except ImportError:
+    from services.storage_service_simple import StorageService
+from database.connection import db_manager
 from config import DashboardConfig
 from utils.logger import setup_logger
-from utils.validators import validate_file_upload
+try:
+    from utils.validators import validate_file_upload
+except ImportError:
+    from utils.validators_simple import validate_file_upload
 from utils.exceptions import APIError
 
 # Initialize configuration and logger
@@ -63,12 +76,34 @@ storage_service = StorageService()
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     if not credentials and config.environment.value == "production":
         raise HTTPException(status_code=401, detail="Authentication required")
-    return {"user_id": "demo_user"}  # Mock user for now
+    return {"user_id": "admin-001"}  # Mock admin user for now
+
+# Database dependency
+def get_db():
+    """Get database session dependency"""
+    return db_manager.get_session()
 
 @app.on_event("startup")
 async def startup_event():
     """Initialize services on startup"""
     logger.info("Starting CineMitr API server...")
+    
+    # Initialize database connection
+    try:
+        db_manager.initialize()
+        logger.info("Database connection initialized")
+        
+        # Test database connection
+        if db_manager.test_connection():
+            logger.info("Database connection test successful")
+        else:
+            logger.error("Database connection test failed")
+            
+    except Exception as e:
+        logger.error(f"Failed to initialize database: {str(e)}")
+        # Continue without database for development
+    
+    # Initialize services
     await dashboard_service.initialize()
     await content_service.initialize()
     await upload_service.initialize()
@@ -359,6 +394,69 @@ async def create_movie(
         logger.error(f"Error creating movie: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to create movie")
 
+@app.put("/api/v1/movies/{movie_id}", response_model=MovieResponse)
+async def update_movie(
+    movie_id: str,
+    movie_data: MovieCreateRequest,
+    user = Depends(get_current_user)
+):
+    """Update existing movie"""
+    try:
+        movie = await content_service.update_movie(movie_id, movie_data)
+        if not movie:
+            raise HTTPException(status_code=404, detail="Movie not found")
+        return MovieResponse(
+            success=True,
+            data=movie,
+            message="Movie updated successfully"
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating movie: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to update movie")
+
+@app.delete("/api/v1/movies/{movie_id}", response_model=DeleteResponse)
+async def delete_movie(
+    movie_id: str,
+    user = Depends(get_current_user)
+):
+    """Delete movie"""
+    try:
+        success = await content_service.delete_movie(movie_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Movie not found")
+        return DeleteResponse(
+            success=True,
+            message="Movie deleted successfully"
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting movie: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to delete movie")
+
+@app.get("/api/v1/movies/{movie_id}", response_model=MovieResponse)
+async def get_movie_details(
+    movie_id: str,
+    user = Depends(get_current_user)
+):
+    """Get movie details by ID"""
+    try:
+        movie = await content_service.get_movie_by_id(movie_id)
+        if not movie:
+            raise HTTPException(status_code=404, detail="Movie not found")
+        return MovieResponse(
+            success=True,
+            data=movie,
+            message="Movie details retrieved successfully"
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching movie details: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch movie details")
+
 # ============= UPLOAD ENDPOINTS =============
 
 @app.post("/api/v1/upload", response_model=UploadResponse)
@@ -557,14 +655,25 @@ async def export_data(
 async def download_file(file_id: str, user = Depends(get_current_user)):
     """Download exported file or content"""
     try:
-        file_path = await storage_service.get_file_path(file_id)
+        # Get file path from content service export registry
+        file_path = content_service.get_export_file_path(file_id)
         if not file_path or not os.path.exists(file_path):
             raise HTTPException(status_code=404, detail="File not found")
         
+        # Determine media type based on file extension
+        filename = os.path.basename(file_path)
+        media_type = "application/octet-stream"
+        if filename.endswith('.csv'):
+            media_type = "text/csv"
+        elif filename.endswith('.json'):
+            media_type = "application/json"
+        elif filename.endswith('.xlsx'):
+            media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        
         return FileResponse(
             file_path,
-            media_type='application/octet-stream',
-            filename=os.path.basename(file_path)
+            media_type=media_type,
+            filename=filename
         )
     except HTTPException:
         raise

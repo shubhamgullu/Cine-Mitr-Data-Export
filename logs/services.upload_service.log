@@ -1,0 +1,16 @@
+2025-08-18 01:59:56 | services.upload_service | INFO | logger.py:78 | Logger initialized for services.upload_service
+2025-08-18 02:01:03 | services.upload_service | INFO | logger.py:78 | Logger initialized for services.upload_service
+2025-08-18 02:01:05 | services.upload_service | INFO | upload_service.py:34 | Initializing Upload Service
+2025-08-18 02:01:05 | services.upload_service | INFO | upload_service.py:240 | Cleaned up 0 temporary files
+2025-08-18 02:15:08 | services.upload_service | INFO | logger.py:78 | Logger initialized for services.upload_service
+2025-08-18 02:15:08 | services.upload_service | INFO | upload_service.py:34 | Initializing Upload Service
+2025-08-18 02:15:08 | services.upload_service | INFO | upload_service.py:240 | Cleaned up 0 temporary files
+2025-08-18 02:34:25 | services.upload_service | INFO | logger.py:78 | Logger initialized for services.upload_service
+2025-08-18 02:34:25 | services.upload_service | INFO | upload_service.py:34 | Initializing Upload Service
+2025-08-18 02:34:25 | services.upload_service | INFO | upload_service.py:240 | Cleaned up 0 temporary files
+2025-08-18 02:36:42 | services.upload_service | INFO | logger.py:78 | Logger initialized for services.upload_service
+2025-08-18 02:36:43 | services.upload_service | INFO | upload_service.py:34 | Initializing Upload Service
+2025-08-18 02:36:43 | services.upload_service | INFO | upload_service.py:240 | Cleaned up 0 temporary files
+2025-08-18 02:37:32 | services.upload_service | INFO | logger.py:78 | Logger initialized for services.upload_service
+2025-08-18 02:37:33 | services.upload_service | INFO | upload_service.py:34 | Initializing Upload Service
+2025-08-18 02:37:33 | services.upload_service | INFO | upload_service.py:240 | Cleaned up 0 temporary files

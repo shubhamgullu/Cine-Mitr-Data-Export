@@ -1,0 +1,2 @@
+2025-08-18 02:35:46 | services.content_service | ERROR | content_service.py:426 | Export 8c72fdc7-e0d0-496d-8e24-4c41e1b78c8d failed: 'ContentService' object has no attribute 'repository'
+2025-08-18 02:36:54 | services.content_service | ERROR | content_service.py:426 | Export 800e9b1b-145f-42d2-9492-904e46ecc2fd failed: 'builtin_function_or_method' object has no attribute 'lower'
