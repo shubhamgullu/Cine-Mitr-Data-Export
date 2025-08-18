@@ -35,3 +35,32 @@
 2025-08-18 12:26:25 | main | INFO | main.py:130 | Starting CineMitr API server...
 2025-08-18 12:26:25 | main | INFO | main.py:135 | Database connection initialized
 2025-08-18 12:26:25 | main | INFO | main.py:139 | Database connection test successful
+2025-08-18 12:40:13 | main | INFO | main.py:533 | Received bulk import request - filename: movie_bulk_upload_complete (1).csv, content_type: text/csv, operation: upsert
+2025-08-18 12:43:16 | main | INFO | main.py:533 | Received bulk import request - filename: movie_bulk_upload_complete (1).csv, content_type: text/csv, operation: upsert
+2025-08-18 12:43:59 | main | INFO | logger.py:78 | Logger initialized for main
+2025-08-18 12:43:59 | main | INFO | main.py:130 | Starting CineMitr API server...
+2025-08-18 12:43:59 | main | INFO | main.py:135 | Database connection initialized
+2025-08-18 12:43:59 | main | INFO | main.py:139 | Database connection test successful
+2025-08-18 12:44:07 | main | INFO | main.py:73 | [REQ] POST /api/v1/movies/bulk-import/file - Client: 127.0.0.1
+2025-08-18 12:44:07 | main | INFO | main.py:533 | Received bulk import request - filename: movie_bulk_upload_template.csv, content_type: application/octet-stream, operation: upsert
+2025-08-18 12:44:08 | main | INFO | main.py:85 | [OK] POST /api/v1/movies/bulk-import/file - 200 - 0.893s
+2025-08-18 12:45:32 | main | INFO | main.py:73 | [REQ] POST /api/v1/movies/bulk-import/file - Client: 127.0.0.1
+2025-08-18 12:45:32 | main | INFO | main.py:533 | Received bulk import request - filename: movie_bulk_upload_complete (1).csv, content_type: application/octet-stream, operation: upsert
+2025-08-18 12:45:32 | main | INFO | main.py:85 | [OK] POST /api/v1/movies/bulk-import/file - 200 - 0.334s
+2025-08-18 12:45:44 | main | INFO | main.py:73 | [REQ] GET /api/v1/movies - Client: 127.0.0.1
+2025-08-18 12:45:44 | main | INFO | main.py:85 | [OK] GET /api/v1/movies - 200 - 0.250s
+2025-08-18 12:46:18 | main | INFO | main.py:73 | [REQ] GET /api/v1/movies - Client: 127.0.0.1
+2025-08-18 12:46:18 | main | INFO | main.py:85 | [OK] GET /api/v1/movies - 200 - 0.040s
+2025-08-18 12:46:38 | main | INFO | main.py:73 | [REQ] GET /api/v1/movies - Client: 127.0.0.1
+2025-08-18 12:46:38 | main | INFO | main.py:85 | [OK] GET /api/v1/movies - 200 - 0.024s
+2025-08-18 12:46:39 | main | INFO | main.py:73 | [REQ] POST /api/v1/movies/bulk-import/file - Client: 127.0.0.1
+2025-08-18 12:46:39 | main | INFO | main.py:533 | Received bulk import request - filename: movie_bulk_upload_complete (1).csv, content_type: text/csv, operation: upsert
+2025-08-18 12:46:40 | main | INFO | main.py:85 | [OK] POST /api/v1/movies/bulk-import/file - 200 - 0.545s
+2025-08-18 12:46:42 | main | INFO | main.py:73 | [REQ] GET /api/v1/movies - Client: 127.0.0.1
+2025-08-18 12:46:42 | main | INFO | main.py:85 | [OK] GET /api/v1/movies - 200 - 0.035s
+2025-08-18 12:47:18 | main | INFO | main.py:73 | [REQ] GET /api/v1/movies - Client: 127.0.0.1
+2025-08-18 12:47:18 | main | INFO | main.py:85 | [OK] GET /api/v1/movies - 200 - 0.031s
+2025-08-18 12:47:20 | main | INFO | main.py:73 | [REQ] GET /api/v1/movies - Client: 127.0.0.1
+2025-08-18 12:47:20 | main | INFO | main.py:85 | [OK] GET /api/v1/movies - 200 - 0.029s
+2025-08-18 12:48:10 | main | INFO | main.py:73 | [REQ] GET /api/v1/movies - Client: 127.0.0.1
+2025-08-18 12:48:10 | main | INFO | main.py:85 | [OK] GET /api/v1/movies - 200 - 0.019s

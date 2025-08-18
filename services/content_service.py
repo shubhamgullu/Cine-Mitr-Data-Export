@@ -580,31 +580,71 @@ class ContentService:
     def _clean_movie_data(self, raw_data: Dict) -> Dict:
         """Clean and validate movie data for database insertion"""
         from datetime import datetime
+        import pandas as pd
+        try:
+            import numpy as np
+        except ImportError:
+            np = None
+        
+        # Helper function to check if value is NaN or equivalent
+        def is_nan_or_empty(value):
+            if pd.isna(value) or value is None:
+                return True
+            if isinstance(value, str):
+                return value.strip().lower() in ['nan', 'null', 'none', '']
+            if np and isinstance(value, (int, float)):
+                try:
+                    if np.isnan(value):
+                        return True
+                except (TypeError, ValueError):
+                    pass
+            return False
+        
+        # Helper function to get clean value
+        def get_clean_value(key, default=None):
+            value = raw_data.get(key)
+            if is_nan_or_empty(value):
+                return default
+            return value
         
         cleaned = {}
         
         # Required fields
-        cleaned["title"] = str(raw_data.get("title", "")).strip()
-        if not cleaned["title"]:
-            raise ValueError("Title is required")
+        title = get_clean_value("title", "")
+        if isinstance(title, str):
+            title = title.strip()
+        else:
+            title = str(title).strip() if title else ""
         
-        cleaned["genre"] = str(raw_data.get("genre", "")).strip()
-        if not cleaned["genre"]:
+        if not title or is_nan_or_empty(title):
+            raise ValueError("Title is required")
+        cleaned["title"] = title
+        
+        genre = get_clean_value("genre", "")
+        if isinstance(genre, str):
+            genre = genre.strip()
+        else:
+            genre = str(genre).strip() if genre else ""
+            
+        if not genre or is_nan_or_empty(genre):
             raise ValueError("Genre is required")
+        cleaned["genre"] = genre
         
         # Optional fields with proper type conversion
-        if raw_data.get("release_date"):
+        release_date = get_clean_value("release_date")
+        if release_date:
             try:
-                if isinstance(raw_data["release_date"], str):
-                    cleaned["release_date"] = datetime.strptime(raw_data["release_date"], "%Y-%m-%d")
+                if isinstance(release_date, str):
+                    cleaned["release_date"] = datetime.strptime(release_date, "%Y-%m-%d")
                 else:
-                    cleaned["release_date"] = raw_data["release_date"]
+                    cleaned["release_date"] = release_date
             except (ValueError, TypeError):
                 pass  # Skip invalid dates
         
-        if raw_data.get("duration_minutes"):
+        duration = get_clean_value("duration_minutes")
+        if duration:
             try:
-                cleaned["duration_minutes"] = int(raw_data["duration_minutes"])
+                cleaned["duration_minutes"] = int(duration)
             except (ValueError, TypeError):
                 pass
         
@@ -612,21 +652,24 @@ class ContentService:
         string_fields = ["description", "director", "rating", "language", "country", 
                         "poster_url", "trailer_url", "imdb_id", "tmdb_id"]
         for field in string_fields:
-            if raw_data.get(field):
-                cleaned[field] = str(raw_data[field]).strip()
+            value = get_clean_value(field)
+            if value:
+                cleaned[field] = str(value).strip()
         
         # Financial fields
         for field in ["box_office_collection", "budget"]:
-            if raw_data.get(field):
+            value = get_clean_value(field)
+            if value:
                 try:
-                    cleaned[field] = float(raw_data[field])
+                    cleaned[field] = float(value)
                 except (ValueError, TypeError):
                     pass
         
         # Status field validation
         valid_statuses = ["Ready", "Uploaded", "In Progress", "New", "Failed", "Processing"]
-        if raw_data.get("status"):
-            status = str(raw_data["status"]).strip()
+        status = get_clean_value("status")
+        if status:
+            status = str(status).strip()
             if status in valid_statuses:
                 cleaned["status"] = status
             else:
@@ -635,19 +678,21 @@ class ContentService:
             cleaned["status"] = "New"
         
         # Boolean field: is_available
-        if raw_data.get("is_available") is not None:
-            if isinstance(raw_data["is_available"], bool):
-                cleaned["is_available"] = raw_data["is_available"]
+        is_available = get_clean_value("is_available")
+        if is_available is not None:
+            if isinstance(is_available, bool):
+                cleaned["is_available"] = is_available
             else:
                 # Convert string to boolean
-                str_val = str(raw_data["is_available"]).lower().strip()
+                str_val = str(is_available).lower().strip()
                 cleaned["is_available"] = str_val in ["true", "1", "yes", "y", "available"]
         else:
             cleaned["is_available"] = True  # Default to available
         
         # Location field
-        if raw_data.get("location"):
-            cleaned["location"] = str(raw_data["location"]).strip()
+        location = get_clean_value("location")
+        if location:
+            cleaned["location"] = str(location).strip()
         
         # Set timestamps
         cleaned["created_at"] = datetime.now()
@@ -663,14 +708,25 @@ class ContentService:
         
         try:
             if file_type.lower() == "csv":
-                # Parse CSV
+                # Parse CSV with proper handling for empty values
                 content_str = file_content.decode('utf-8')
-                df = pd.read_csv(StringIO(content_str))
+                df = pd.read_csv(
+                    StringIO(content_str),
+                    keep_default_na=False,  # Don't convert empty strings to NaN
+                    na_values=[''],         # Only treat empty strings as NaN, not 'NA', 'null', etc.
+                    dtype=str              # Read all columns as strings initially
+                )
                 return df.to_dict('records')
                 
             elif file_type.lower() in ["xlsx", "excel"]:
-                # Parse Excel
-                df = pd.read_excel(BytesIO(file_content), sheet_name=0)
+                # Parse Excel with proper handling for empty values
+                df = pd.read_excel(
+                    BytesIO(file_content), 
+                    sheet_name=0,
+                    keep_default_na=False,  # Don't convert empty strings to NaN
+                    na_values=[''],         # Only treat empty strings as NaN
+                    dtype=str              # Read all columns as strings initially
+                )
                 return df.to_dict('records')
                 
             elif file_type.lower() == "json":
