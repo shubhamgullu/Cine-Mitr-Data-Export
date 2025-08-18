@@ -50,6 +50,8 @@ class Movie(Base):
     tmdb_id = Column(String(20), nullable=True)
     box_office_collection = Column(DECIMAL(15, 2), nullable=True)
     budget = Column(DECIMAL(15, 2), nullable=True)
+    is_available = Column(Boolean, default=True, nullable=False)
+    location = Column(Text, nullable=True)
     created_by = Column(String(36), ForeignKey('users.id'), nullable=True)
     created_at = Column(DateTime, default=func.now(), nullable=False)
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)

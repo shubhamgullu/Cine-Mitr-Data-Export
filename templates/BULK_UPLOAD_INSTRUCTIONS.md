@@ -32,6 +32,8 @@ This template allows you to upload multiple movies at once using CSV or Excel fi
 | `tmdb_id` | Text | TMDB ID | "603" | max 20 chars |
 | `box_office_collection` | Number | Box office earnings in millions | 463.5 | Decimal number |
 | `budget` | Number | Production budget in millions | 63 | Decimal number |
+| `is_available` | Boolean | Whether movie is available | true | true, false, 1, 0, yes, no |
+| `location` | Text | Local file path for movie file | "/movies/example.mp4" | File path or URL |
 
 ## 🔧 Data Format Guidelines
 
@@ -48,6 +50,17 @@ This template allows you to upload multiple movies at once using CSV or Excel fi
 - Must be valid HTTP/HTTPS URLs
 - Poster URLs should point to image files (jpg, png, etc.)
 - Trailer URLs should point to video files (mp4, etc.)
+
+### ✅ **Boolean Fields (is_available)**
+- Accept various formats: `true`, `false`, `1`, `0`, `yes`, `no`, `available`, `unavailable`
+- Case-insensitive
+- Defaults to `true` if not specified
+
+### 📁 **Location Field**
+- Local file path for the movie file
+- Can be absolute or relative paths
+- Examples: `/movies/filename.mp4`, `C:\Movies\filename.mp4`, `./videos/movie.avi`
+- Leave empty if file location is unknown
 
 ### 📊 **Status Values**
 Valid status options:

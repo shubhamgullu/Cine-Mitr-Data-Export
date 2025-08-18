@@ -16,7 +16,9 @@
       "imdb_id": "tt0133093",
       "tmdb_id": "603",
       "box_office_collection": 463.5,
-      "budget": 63
+      "budget": 63,
+      "is_available": true,
+      "location": "/movies/the_matrix.mp4"
     },
     {
       "title": "Dangal",
@@ -34,7 +36,9 @@
       "imdb_id": "tt5074352",
       "tmdb_id": "364896",
       "box_office_collection": 374.0,
-      "budget": 70
+      "budget": 70,
+      "is_available": true,
+      "location": "/movies/dangal.mp4"
     },
     {
       "title": "Avengers: Endgame",
@@ -52,7 +56,9 @@
       "imdb_id": "tt4154796",
       "tmdb_id": "299534",
       "box_office_collection": 2797.8,
-      "budget": 356
+      "budget": 356,
+      "is_available": true,
+      "location": "/movies/avengers_endgame.mp4"
     }
   ]
 }

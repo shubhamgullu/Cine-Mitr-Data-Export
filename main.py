@@ -3,7 +3,9 @@ CineMitr Content Management Dashboard - FastAPI Backend
 This is the main FastAPI application with all backend endpoints
 """
 
-from fastapi import FastAPI, HTTPException, Depends, File, UploadFile, Query, BackgroundTasks
+from fastapi import FastAPI, HTTPException, Depends, File, UploadFile, Query, BackgroundTasks, Request
+from fastapi.exceptions import RequestValidationError
+import time
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -61,6 +63,45 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add request logging middleware
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    
+    # Log incoming request
+    logger.info(f"[REQ] {request.method} {request.url.path} - Client: {request.client.host}")
+    if request.query_params:
+        logger.debug(f"Query params: {dict(request.query_params)}")
+    
+    # Process request
+    response = await call_next(request)
+    
+    # Calculate response time
+    process_time = time.time() - start_time
+    
+    # Log response
+    status_label = "OK" if response.status_code < 400 else "ERROR" if response.status_code >= 500 else "WARN"
+    logger.info(f"[{status_label}] {request.method} {request.url.path} - {response.status_code} - {process_time:.3f}s")
+    
+    # Log slow requests
+    if process_time > 1.0:
+        logger.warning(f"[SLOW] {request.method} {request.url.path} took {process_time:.3f}s")
+    
+    # Add response time header
+    response.headers["X-Process-Time"] = str(process_time)
+    
+    return response
+
+# Exception handlers
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logger.error(f"Validation error: {exc.errors()}")
+    logger.error(f"Request body: {await request.body()}")
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors(), "body": "Validation failed"}
+    )
 
 # Security
 security = HTTPBearer(auto_error=False)
@@ -456,6 +497,132 @@ async def get_movie_details(
     except Exception as e:
         logger.error(f"Error fetching movie details: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to fetch movie details")
+
+# ============= BULK MOVIE IMPORT ENDPOINTS =============
+
+@app.post("/api/v1/movies/bulk-import", response_model=BulkMovieImportResponse)
+async def bulk_import_movies_from_data(
+    import_request: BulkMovieImportRequest,
+    user = Depends(get_current_user)
+):
+    """Bulk import movies from JSON data"""
+    try:
+        result = await content_service.bulk_import_movies(
+            [movie.dict() for movie in import_request.movies], 
+            import_request.operation
+        )
+        
+        return BulkMovieImportResponse(
+            success=True,
+            data=result,
+            import_id=result["import_id"],
+            message=f"Bulk import completed: {result['successful']} successful, {result['failed']} failed"
+        )
+    except Exception as e:
+        logger.error(f"Error in bulk movie import: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to perform bulk movie import")
+
+@app.post("/api/v1/movies/bulk-import/file", response_model=BulkMovieImportResponse)
+async def bulk_import_movies_from_file(
+    file: UploadFile = File(...),
+    operation: str = Query("upsert", description="Operation: create, update, upsert"),
+    user = Depends(get_current_user)
+):
+    """Bulk import movies from uploaded file (CSV, Excel, JSON)"""
+    try:
+        logger.info(f"Received bulk import request - filename: {file.filename}, content_type: {file.content_type}, operation: {operation}")
+        
+        if not file:
+            logger.error("No file received in request")
+            raise HTTPException(status_code=422, detail="No file provided")
+        
+        if not file.filename:
+            logger.error("File has no filename")
+            raise HTTPException(status_code=422, detail="File must have a filename")
+        # Validate file type
+        file_ext = file.filename.split('.')[-1].lower() if file.filename else ""
+        if file_ext not in ["csv", "xlsx", "xls", "json"]:
+            raise HTTPException(
+                status_code=400, 
+                detail="Unsupported file type. Use CSV, Excel (.xlsx), or JSON files."
+            )
+        
+        # Read file content
+        file_content = await file.read()
+        
+        # Parse file content
+        movies_data = await content_service.parse_uploaded_file(file_content, file_ext)
+        
+        if not movies_data:
+            raise HTTPException(status_code=400, detail="No valid movie data found in file")
+        
+        # Perform bulk import
+        result = await content_service.bulk_import_movies(movies_data, operation)
+        
+        return BulkMovieImportResponse(
+            success=True,
+            data=result,
+            import_id=result["import_id"],
+            message=f"File import completed: {result['successful']} successful, {result['failed']} failed from {len(movies_data)} records"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in bulk movie file import: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to import movies from file: {str(e)}")
+
+@app.get("/api/v1/movies/templates/download/{template_type}")
+async def download_movie_template(
+    template_type: str,
+    user = Depends(get_current_user)
+):
+    """Download movie bulk import template"""
+    try:
+        template_files = {
+            "csv": "templates/movie_bulk_upload_template.csv",
+            "excel": "templates/movie_bulk_upload_template.xlsx", 
+            "json": "templates/movie_bulk_upload_template.json",
+            "empty": "templates/movie_bulk_upload_empty.csv"
+        }
+        
+        if template_type not in template_files:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Invalid template type. Available: {', '.join(template_files.keys())}"
+            )
+        
+        template_path = template_files[template_type]
+        
+        if not os.path.exists(template_path):
+            raise HTTPException(status_code=404, detail="Template file not found")
+        
+        # Determine media type
+        media_types = {
+            "csv": "text/csv",
+            "excel": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "json": "application/json",
+            "empty": "text/csv"
+        }
+        
+        filename_map = {
+            "csv": "movie_bulk_upload_template.csv",
+            "excel": "movie_bulk_upload_template.xlsx",
+            "json": "movie_bulk_upload_template.json", 
+            "empty": "movie_bulk_upload_empty.csv"
+        }
+        
+        return FileResponse(
+            template_path,
+            media_type=media_types[template_type],
+            filename=filename_map[template_type]
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error downloading template: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to download template")
 
 # ============= UPLOAD ENDPOINTS =============
 

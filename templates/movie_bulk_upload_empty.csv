@@ -1,1 +1,1 @@
-title,genre,release_date,duration_minutes,description,director,rating,language,country,poster_url,trailer_url,status,imdb_id,tmdb_id,box_office_collection,budget
+title,genre,release_date,duration_minutes,description,director,rating,language,country,poster_url,trailer_url,status,imdb_id,tmdb_id,box_office_collection,budget,is_available,location

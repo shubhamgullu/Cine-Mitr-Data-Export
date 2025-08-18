@@ -19,3 +19,19 @@
 2025-08-18 02:37:32 | main | INFO | main.py:89 | Starting CineMitr API server...
 2025-08-18 02:37:33 | main | INFO | main.py:94 | Database connection initialized
 2025-08-18 02:37:33 | main | INFO | main.py:98 | Database connection test successful
+2025-08-18 02:47:07 | main | INFO | logger.py:78 | Logger initialized for main
+2025-08-18 02:47:07 | main | INFO | main.py:89 | Starting CineMitr API server...
+2025-08-18 02:47:07 | main | INFO | main.py:94 | Database connection initialized
+2025-08-18 02:47:07 | main | INFO | main.py:98 | Database connection test successful
+2025-08-18 11:18:51 | main | INFO | logger.py:78 | Logger initialized for main
+2025-08-18 11:18:51 | main | INFO | main.py:89 | Starting CineMitr API server...
+2025-08-18 11:18:51 | main | INFO | main.py:94 | Database connection initialized
+2025-08-18 11:18:51 | main | INFO | main.py:98 | Database connection test successful
+2025-08-18 11:49:27 | main | INFO | logger.py:78 | Logger initialized for main
+2025-08-18 11:49:27 | main | INFO | main.py:89 | Starting CineMitr API server...
+2025-08-18 11:49:29 | main | INFO | main.py:94 | Database connection initialized
+2025-08-18 11:49:29 | main | INFO | main.py:98 | Database connection test successful
+2025-08-18 12:26:25 | main | INFO | logger.py:78 | Logger initialized for main
+2025-08-18 12:26:25 | main | INFO | main.py:130 | Starting CineMitr API server...
+2025-08-18 12:26:25 | main | INFO | main.py:135 | Database connection initialized
+2025-08-18 12:26:25 | main | INFO | main.py:139 | Database connection test successful

@@ -1,6 +1,7 @@
 import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
+import pandas as pd
 from typing import Dict, List, Optional
 from config import DashboardConfig, MENU_ITEMS, QUICK_ACTIONS
 from api_service import APIService, DashboardMetrics, StatusDistribution, PriorityDistribution, ContentItem
@@ -825,17 +826,14 @@ class UIComponents:
                     st.warning("⚠️ Please select movies to export")
         
         with col2:
-            if st.button("🗑️ Delete Selected", key="delete_movies"):
-                selected_count = len([k for k in st.session_state.keys() if k.startswith("movie_select_") and st.session_state[k]])
-                if selected_count > 0:
-                    st.error(f"🗑️ Deleting {selected_count} selected movies...")
-                else:
-                    st.warning("⚠️ Please select movies to delete")
-        
+            if st.button("📥 Bulk Import", key="bulk_import_movies"):
+                st.session_state.show_bulk_import = True
+                st.rerun()
+
         with col3:
-            if st.button("📊 Bulk Edit", key="bulk_edit_movies"):
-                st.info("📝 Bulk edit functionality")
-        
+            if st.button("📋 Download Template", key="download_template"):
+                self._handle_template_download()
+
         with col4:
             if st.button("🔄 Refresh", key="refresh_movies"):
                 # Clear any cached data and force refresh
@@ -843,14 +841,18 @@ class UIComponents:
                 st.success("🔄 Movies list refreshed!")
                 st.rerun()
         
+        # Show bulk import modal if requested
+        if st.session_state.get("show_bulk_import", False):
+            self._render_bulk_import_modal()
+        
         # Movies table with checkboxes
         if not movies_list:
             # Fetch movies from API service
             movies_list = self.api_service.get_movies_list()
         
         # Table header
-        header_cols = st.columns([0.5, 3, 1.5, 1, 1.5, 1.5, 0.5])
-        headers = ["☑️", "Movie Title", "Genre", "Duration", "Status", "Release Date", "Actions"]
+        header_cols = st.columns([0.5, 2.5, 1, 1, 1, 1, 1, 1.5, 0.5])
+        headers = ["☑️", "Movie Title", "Genre", "Duration", "Status", "Available", "Location", "Release Date", "Actions"]
         
         for col, header in zip(header_cols, headers):
             with col:
@@ -858,10 +860,10 @@ class UIComponents:
         
         # Table rows
         for movie in movies_list:
-            cols = st.columns([0.5, 3, 1.5, 1, 1.5, 1.5, 0.5])
+            cols = st.columns([0.5, 2.5, 1, 1, 1, 1, 1, 1.5, 0.5])
             
             with cols[0]:
-                st.checkbox("", key=f"movie_select_{movie['id']}", label_visibility="collapsed")
+                st.checkbox("Select", key=f"movie_select_{movie['id']}", label_visibility="collapsed")
             
             with cols[1]:
                 st.markdown(f"**{movie['title']}**")
@@ -879,6 +881,25 @@ class UIComponents:
                 st.markdown(f'<span class="{status_class}">{status}</span>', unsafe_allow_html=True)
             
             with cols[5]:
+                # Display availability status
+                is_available = movie.get('is_available', True)
+                if is_available:
+                    st.markdown("✅ Available")
+                else:
+                    st.markdown("❌ Not Available")
+            
+            with cols[6]:
+                # Display location (truncated if too long)
+                location = movie.get('location', '')
+                if location:
+                    if len(location) > 20:
+                        st.write(f"{location[:17]}...")
+                    else:
+                        st.write(location)
+                else:
+                    st.write("N/A")
+            
+            with cols[7]:
                 release_date = movie.get('release_date')
                 if release_date:
                     # Handle datetime strings - just take the date part
@@ -888,7 +909,7 @@ class UIComponents:
                 else:
                     st.write("N/A")
             
-            with cols[6]:
+            with cols[8]:
                 if st.button("⋮", key=f"movie_action_{movie['id']}", help="Movie actions"):
                     self._handle_movie_actions(movie)
     
@@ -907,6 +928,173 @@ class UIComponents:
             "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         }
         return mime_types.get(format, "application/octet-stream")
+    
+    def _handle_template_download(self):
+        """Handle template download"""
+        st.info("📋 Select template format to download:")
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            if st.button("📄 CSV Template", key="download_csv_template"):
+                template_content = self.api_service.download_movie_template("csv")
+                if template_content:
+                    st.download_button(
+                        label="⬇️ Download CSV Template",
+                        data=template_content,
+                        file_name="movie_bulk_upload_template.csv",
+                        mime="text/csv",
+                        key="csv_download"
+                    )
+        
+        with col2:
+            if st.button("📊 Excel Template", key="download_excel_template"):
+                template_content = self.api_service.download_movie_template("excel")
+                if template_content:
+                    st.download_button(
+                        label="⬇️ Download Excel Template",
+                        data=template_content,
+                        file_name="movie_bulk_upload_template.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        key="excel_download"
+                    )
+        
+        with col3:
+            if st.button("🔢 JSON Template", key="download_json_template"):
+                template_content = self.api_service.download_movie_template("json")
+                if template_content:
+                    st.download_button(
+                        label="⬇️ Download JSON Template",
+                        data=template_content,
+                        file_name="movie_bulk_upload_template.json",
+                        mime="application/json",
+                        key="json_download"
+                    )
+        
+        with col4:
+            if st.button("📄 Empty CSV", key="download_empty_template"):
+                template_content = self.api_service.download_movie_template("empty")
+                if template_content:
+                    st.download_button(
+                        label="⬇️ Download Empty CSV",
+                        data=template_content,
+                        file_name="movie_bulk_upload_empty.csv",
+                        mime="text/csv",
+                        key="empty_download"
+                    )
+    
+    def _render_bulk_import_modal(self):
+        """Render bulk import modal"""
+        st.markdown("---")
+        st.markdown("### 📥 Bulk Import Movies")
+        
+        with st.expander("📖 Instructions", expanded=False):
+            st.markdown("""
+            **Supported file formats**: CSV, Excel (.xlsx), JSON
+            
+            **Operation types**:
+            - **Create**: Only add new movies (fails if movie exists)
+            - **Update**: Only update existing movies (fails if movie doesn't exist)  
+            - **Upsert** (recommended): Create new or update existing movies
+            
+            **Required fields**: `title`, `genre`
+            
+            **Date format**: YYYY-MM-DD (e.g., 2024-12-25)
+            """)
+        
+        # Operation selection
+        operation = st.selectbox(
+            "Operation Type",
+            ["upsert", "create", "update"],
+            index=0,
+            help="Choose how to handle the imported movies"
+        )
+        
+        operation_descriptions = {
+            "upsert": "🔄 Create new movies or update existing ones (recommended)",
+            "create": "➕ Only create new movies (fail if exists)",
+            "update": "✏️ Only update existing movies (fail if not found)"
+        }
+        
+        st.info(operation_descriptions[operation])
+        
+        # File upload
+        uploaded_file = st.file_uploader(
+            "Choose a file to import",
+            type=['csv', 'xlsx', 'json'],
+            help="Upload a CSV, Excel, or JSON file with movie data"
+        )
+        
+        col1, col2, col3 = st.columns([1, 1, 2])
+        
+        with col1:
+            if st.button("📥 Import Movies", key="confirm_bulk_import", disabled=not uploaded_file):
+                if uploaded_file:
+                    self._process_bulk_import(uploaded_file, operation)
+        
+        with col2:
+            if st.button("❌ Cancel", key="cancel_bulk_import"):
+                st.session_state.show_bulk_import = False
+                st.rerun()
+        
+        with col3:
+            st.empty()  # Spacer
+    
+    def _process_bulk_import(self, uploaded_file, operation: str):
+        """Process the bulk import"""
+        try:
+            # Read file content
+            file_content = uploaded_file.read()
+            filename = uploaded_file.name
+            
+            # Show progress
+            with st.spinner(f"🚀 Processing bulk import ({operation})..."):
+                result = self.api_service.bulk_import_movies_from_file(
+                    file_content, filename, operation
+                )
+            
+            if result["status"] == "success":
+                data = result["data"]
+                
+                # Show success summary
+                st.success(f"✅ {result['message']}")
+                
+                # Show detailed results
+                col1, col2, col3, col4 = st.columns(4)
+                
+                with col1:
+                    st.metric("Total Processed", data["total_processed"])
+                
+                with col2:
+                    st.metric("Successful", data["successful"], delta=data["successful"])
+                
+                with col3:
+                    st.metric("Created", data.get("created", 0), delta=data.get("created", 0))
+                
+                with col4:
+                    st.metric("Updated", data.get("updated", 0), delta=data.get("updated", 0))
+                
+                # Show errors if any
+                if data.get("errors"):
+                    st.error(f"⚠️ {data['failed']} records failed:")
+                    
+                    error_df = pd.DataFrame(data["errors"])
+                    st.dataframe(error_df, use_container_width=True)
+                
+                # Clear the modal and refresh the movie list
+                st.session_state.show_bulk_import = False
+                st.cache_data.clear()  # Clear cache to show updated data
+                st.success("🔄 Movie list will be refreshed automatically.")
+                st.rerun()
+                
+            else:
+                st.error(f"❌ Import failed: {result['message']}")
+                
+        except Exception as e:
+            st.error(f"❌ Error processing import: {str(e)}")
+        
+        # Reset file uploader
+        uploaded_file.seek(0)
     
     def render_edit_movie_form(self, movie_data: Dict):
         """Render edit movie form with pre-populated data"""

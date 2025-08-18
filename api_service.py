@@ -292,3 +292,57 @@ class APIService:
         except Exception as e:
             st.error(f"Error downloading file: {str(e)}")
             return None
+    
+    def bulk_import_movies_from_file(self, file_content: bytes, filename: str, operation: str = "upsert") -> Dict:
+        """Bulk import movies from uploaded file"""
+        try:
+            # Prepare the file for upload
+            files = {
+                'file': (filename, file_content, self._get_content_type(filename))
+            }
+            
+            # Use a fresh requests session for file upload to avoid header conflicts
+            import requests
+            response = requests.post(
+                f"{self.config.api.base_url}/movies/bulk-import/file?operation={operation}",
+                files=files
+            )
+            response.raise_for_status()
+            api_response = response.json()
+            
+            if api_response.get("success"):
+                return {
+                    "status": "success",
+                    "data": api_response.get("data", {}),
+                    "message": api_response.get("message", "Bulk import completed successfully")
+                }
+            else:
+                return {
+                    "status": "error",
+                    "message": api_response.get("message", "Bulk import failed")
+                }
+                
+        except Exception as e:
+            st.error(f"Error in bulk import: {str(e)}")
+            return {"status": "error", "message": str(e)}
+    
+    def download_movie_template(self, template_type: str = "csv") -> bytes:
+        """Download movie bulk import template"""
+        try:
+            response = self.session.get(f"{self.config.api.base_url}/movies/templates/download/{template_type}")
+            response.raise_for_status()
+            return response.content
+        except Exception as e:
+            st.error(f"Error downloading template: {str(e)}")
+            return None
+    
+    def _get_content_type(self, filename: str) -> str:
+        """Get content type based on file extension"""
+        ext = filename.split('.')[-1].lower() if filename else ""
+        content_types = {
+            "csv": "text/csv",
+            "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "xls": "application/vnd.ms-excel",
+            "json": "application/json"
+        }
+        return content_types.get(ext, "application/octet-stream")

@@ -144,6 +144,8 @@ class Movie(BaseModel):
     poster_url: Optional[str] = None
     trailer_url: Optional[str] = None
     status: ContentStatus
+    is_available: bool = True
+    location: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
@@ -186,6 +188,8 @@ class MovieCreateRequest(BaseModel):
     language: Optional[str] = Field(None, max_length=50)
     country: Optional[str] = Field(None, max_length=100)
     status: Optional[ContentStatus] = ContentStatus.NEW
+    is_available: Optional[bool] = True
+    location: Optional[str] = Field(None, max_length=500)
 
 class BulkUpdateRequest(BaseModel):
     content_ids: List[str] = Field(..., min_items=1)
@@ -357,6 +361,27 @@ class CleanupResponse(BaseResponse):
 
 class ExportResponse(BaseResponse):
     export_id: str
+
+class BulkMovieImportRequest(BaseModel):
+    operation: str = Field(..., description="Operation type: 'create', 'update', or 'upsert'")
+    movies: List[MovieCreateRequest] = Field(..., description="List of movies to import")
+    
+class BulkMovieImportResult(BaseModel):
+    total_processed: int
+    successful: int
+    failed: int
+    created: int = 0
+    updated: int = 0
+    errors: List[Dict[str, Any]] = []
+    warnings: List[Dict[str, Any]] = []
+
+class BulkMovieImportResponse(BaseResponse):
+    data: BulkMovieImportResult
+    import_id: str
+
+class FileUploadRequest(BaseModel):
+    file_type: str = Field(..., description="File type: csv, xlsx, json")
+    operation: str = Field(default="upsert", description="Operation type: create, update, upsert")
 
 # ============= CONFIGURATION MODELS =============
 
