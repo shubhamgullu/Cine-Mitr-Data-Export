@@ -342,15 +342,22 @@ class UIComponents:
         """Render storage usage in sidebar"""
         st.markdown("### 💾 Storage Usage")
         
-        # Mock storage data - replace with API call
-        used_gb = 680
-        total_gb = 1000
-        usage_percent = (used_gb / total_gb) * 100
+        # Get storage data from dashboard metrics
+        try:
+            metrics = self.api_service.get_dashboard_metrics()
+            used_gb = metrics.storage_used_gb
+            total_gb = metrics.storage_total_gb
+            usage_percent = (used_gb / total_gb) * 100 if total_gb > 0 else 0
+        except:
+            # Fallback to mock data if database access fails
+            used_gb = 0
+            total_gb = 1000
+            usage_percent = 0
         
         st.markdown(f"""
         <div class="storage-info">
-            <div style="font-size: 1.2rem; font-weight: bold;">{used_gb} GB used</div>
-            <div style="font-size: 0.9rem; opacity: 0.9;">{total_gb} GB total</div>
+            <div style="font-size: 1.2rem; font-weight: bold;">{used_gb:.1f} GB used</div>
+            <div style="font-size: 0.9rem; opacity: 0.9;">{total_gb:.0f} GB total</div>
             <div class="storage-bar">
                 <div class="storage-fill" style="width: {usage_percent}%;"></div>
             </div>
@@ -364,31 +371,31 @@ class UIComponents:
         
         metric_configs = [
             {
-                "value": "127",
+                "value": str(metrics.total_movies),
                 "label": "Total Movies",
                 "change": "+4 this month",
                 "color": "#3B82F6"
             },
             {
-                "value": "2,847",
+                "value": f"{metrics.content_items:,}",
                 "label": "Content Items", 
-                "change": "+124 this week",
+                "change": f"+{metrics.uploaded_weekly_change} this week",
                 "color": "#10B981"
             },
             {
-                "value": "1,923",
+                "value": f"{metrics.uploaded:,}",
                 "label": "Uploaded",
                 "change": "+17 today",
                 "color": "#8B5CF6"
             },
             {
-                "value": "234",
+                "value": str(metrics.pending),
                 "label": "Pending",
                 "change": "-12 vs yesterday",
                 "color": "#F59E0B"
             },
             {
-                "value": "67.5%",
+                "value": f"{metrics.upload_rate:.1f}%",
                 "label": "Upload Rate",
                 "change": "+2.3% vs last week",
                 "color": "#EF4444"
@@ -570,12 +577,45 @@ class UIComponents:
         st.markdown('<div class="chart-container">', unsafe_allow_html=True)
         st.markdown('<div class="chart-title">💾 Storage by Type</div>', unsafe_allow_html=True)
         
-        # Mock storage data by type
-        storage_data = {
-            'Type': ['Movies', 'Reels', 'Trailers', 'Other'],
-            'Size_GB': [450, 150, 60, 20],
-            'Colors': ['#8B5CF6', '#3B82F6', '#10B981', '#F59E0B']
-        }
+        # Get real storage data by type
+        try:
+            storage_by_type = self.api_service.get_storage_by_type()
+            
+            # Filter out types with 0 storage and prepare data
+            non_zero_types = {k: v for k, v in storage_by_type.items() if v > 0}
+            
+            if non_zero_types:
+                types = list(non_zero_types.keys())
+                sizes = list(non_zero_types.values())
+            else:
+                # Fallback data if no content exists
+                types = ['No Data']
+                sizes = [1]
+            
+            # Color mapping for content types
+            color_map = {
+                'Movie': '#8B5CF6',
+                'Reel': '#3B82F6', 
+                'Trailer': '#10B981',
+                'Series': '#F59E0B',
+                'Documentary': '#EF4444',
+                'No Data': '#9CA3AF'
+            }
+            
+            colors = [color_map.get(t, '#9CA3AF') for t in types]
+            
+            storage_data = {
+                'Type': types,
+                'Size_GB': sizes,
+                'Colors': colors
+            }
+        except:
+            # Fallback to mock data if database access fails
+            storage_data = {
+                'Type': ['Movies', 'Reels', 'Trailers', 'Other'],
+                'Size_GB': [450, 150, 60, 20],
+                'Colors': ['#8B5CF6', '#3B82F6', '#10B981', '#F59E0B']
+            }
         
         fig = go.Figure(data=[go.Pie(
             labels=storage_data['Type'],
@@ -642,13 +682,49 @@ class UIComponents:
                     st.write(item.priority.value)
                 
                 with cols[5]:
-                    st.write(item.updated)
+                    # Calculate time ago string
+                    updated_str = self._calculate_time_ago(item.updated_at)
+                    st.write(updated_str)
                 
                 with cols[6]:
                     if st.button("⋮", key=f"action_{item.id}", help="More actions"):
                         self._show_item_actions(item)
         
         st.markdown('</div>', unsafe_allow_html=True)
+    
+    def _calculate_time_ago(self, updated_at) -> str:
+        """Calculate time ago string from datetime"""
+        from datetime import datetime
+        
+        if updated_at is None:
+            return "Unknown"
+        
+        try:
+            # Handle both datetime objects and strings
+            if isinstance(updated_at, str):
+                # Try to parse ISO format datetime string
+                updated_at = datetime.fromisoformat(updated_at.replace('Z', '+00:00'))
+            
+            time_diff = datetime.utcnow() - updated_at
+            
+            if time_diff.days > 0:
+                if time_diff.days == 1:
+                    return "1 day ago"
+                elif time_diff.days < 7:
+                    return f"{time_diff.days} days ago"
+                else:
+                    weeks = time_diff.days // 7
+                    return f"{weeks} week{'s' if weeks > 1 else ''} ago"
+            else:
+                hours = time_diff.seconds // 3600
+                if hours > 0:
+                    return f"{hours} hour{'s' if hours > 1 else ''} ago"
+                else:
+                    minutes = time_diff.seconds // 60
+                    return f"{minutes} minute{'s' if minutes > 1 else ''} ago"
+                    
+        except Exception as e:
+            return "Unknown"
     
     def _show_item_actions(self, item: ContentItem):
         """Show item action menu"""
@@ -780,6 +856,77 @@ class UIComponents:
         """Render movies list with checkboxes for bulk operations"""
         st.markdown("### 🎬 Movies Management")
         
+        # Search and Filter Section
+        st.markdown("#### 🔍 Search & Filters")
+        search_col1, search_col2, search_col3, search_col4 = st.columns(4)
+        
+        with search_col1:
+            search_term = st.text_input(
+                "🔍 Search Movies", 
+                placeholder="Search by title, director, description...",
+                help="Search for movies by name, director, or description",
+                key="movie_search_input"
+            )
+        
+        with search_col2:
+            genre_filter = st.selectbox(
+                "Genre Filter", 
+                options=["All"] + ["Action", "Adventure", "Comedy", "Drama", "Horror", 
+                        "Romance", "Sci-Fi", "Thriller", "Documentary", "Animation", 
+                        "Biography", "Crime", "Family", "Fantasy", "Mystery"],
+                index=0,
+                key="movie_genre_filter"
+            )
+        
+        with search_col3:
+            status_filter = st.selectbox(
+                "Status Filter",
+                options=["All", "Ready", "Processing", "Uploaded", "Failed", "New"],
+                index=0,
+                key="movie_status_filter"
+            )
+        
+        with search_col4:
+            language_filter = st.selectbox(
+                "Language Filter",
+                options=["All", "Hindi", "English", "Tamil", "Telugu", "Malayalam", 
+                        "Bengali", "Marathi", "Gujarati", "Punjabi", "Other"],
+                index=0,
+                key="movie_language_filter"
+            )
+        
+        # Clear filters and search info
+        search_button_col1, search_button_col2, search_button_col3 = st.columns([1, 2, 1])
+        with search_button_col1:
+            clear_filters = st.button("🗑️ Clear All Filters", use_container_width=True)
+        with search_button_col3:
+            st.caption("💡 Search results update automatically as you type or change filters")
+        
+        # Handle filter clearing
+        if clear_filters:
+            # Reset all session state keys for movie search
+            keys_to_reset = [
+                'movie_search_input', 'movie_genre_filter', 
+                'movie_status_filter', 'movie_language_filter'
+            ]
+            for key in keys_to_reset:
+                if key in st.session_state:
+                    del st.session_state[key]
+            st.rerun()
+        
+        # Prepare filter parameters
+        search_params = {}
+        if search_term:
+            search_params['search'] = search_term
+        if genre_filter != "All":
+            search_params['genre'] = genre_filter
+        if status_filter != "All":
+            search_params['status'] = status_filter
+        if language_filter != "All":
+            search_params['language'] = language_filter
+        
+        st.markdown("---")
+        
         # Action buttons
         col1, col2, col3, col4 = st.columns(4)
         
@@ -847,8 +994,37 @@ class UIComponents:
         
         # Movies table with checkboxes
         if not movies_list:
-            # Fetch movies from API service
-            movies_list = self.api_service.get_movies_list()
+            # Fetch movies from API service with search/filter parameters
+            movies_list = self.api_service.get_movies_list(
+                page=1, 
+                limit=100,  # Show more movies for better search experience
+                **search_params
+            )
+        
+        # Display search results info
+        if search_params:
+            search_info_parts = []
+            if search_term:
+                search_info_parts.append(f"'{search_term}'")
+            if genre_filter != "All":
+                search_info_parts.append(f"Genre: {genre_filter}")
+            if status_filter != "All":
+                search_info_parts.append(f"Status: {status_filter}")
+            if language_filter != "All":
+                search_info_parts.append(f"Language: {language_filter}")
+            
+            search_info = " | ".join(search_info_parts)
+            if movies_list:
+                st.success(f"🎬 Found {len(movies_list)} movies for: {search_info}")
+            else:
+                st.warning(f"🔍 No movies found for: {search_info}")
+        else:
+            if movies_list:
+                st.info(f"📋 Showing {len(movies_list)} movies (use filters above to search)")
+        
+        if not movies_list:
+            st.warning("📭 No movies found. Try adjusting your search filters or add some movies first.")
+            return
         
         # Table header
         header_cols = st.columns([0.5, 2.5, 1, 1, 1, 1, 1, 1.5, 0.5])
@@ -1349,3 +1525,667 @@ class UIComponents:
             </div>
         </div>
         """, unsafe_allow_html=True)
+    
+    def render_add_content_item_form(self):
+        """Render add content item form with all required fields"""
+        with st.form("add_content_form", clear_on_submit=True):
+            st.markdown("### 🎥 Add New Content Item")
+            st.info("💡 **Tip:** Fill in the required fields (*) and any additional details, then click **Add Content Item** to create.")
+            
+            # Basic Information
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Link/URL
+                link_url = st.text_input("Content Link/URL *", 
+                    placeholder="https://www.instagram.com/reel/DEhik5IzuzE/", 
+                    help="URL to the original content source")
+                
+                # Movie association with enhanced autocomplete
+                st.markdown("**Movie Association**")
+                
+                # Check and show available movies count
+                try:
+                    from database.connection import db_manager
+                    from database.models import Movie
+                    with db_manager.get_session() as session:
+                        total_movies = session.query(Movie).count()
+                        if total_movies > 0:
+                            st.success(f"🎥 {total_movies} movies available in database")
+                        else:
+                            st.warning("🚨 No movies in database yet!")
+                            col_a, col_b, col_c = st.columns([1,1,1])
+                            with col_b:
+                                if st.button("🎬 Add Sample Movies", key="sample_movies_btn"):
+                                    if self.api_service._create_sample_movies():
+                                        st.success("✅ Sample movies added!")
+                                        st.rerun()
+                except Exception as e:
+                    st.error(f"Database error: {str(e)}")
+                
+                movie_search = st.text_input(
+                    "Movie Name", 
+                    placeholder="Type movie name (e.g., Lakshya, ZNMD, 3 Idiots)...", 
+                    help="Search for existing movies or enter new movie name"
+                )
+                
+                # Get movie suggestions and show debug info
+                movie_suggestions = []
+                if movie_search and len(movie_search) >= 1:
+                    with st.spinner("Searching movies..."):
+                        movie_suggestions = self.api_service.get_movie_names_autocomplete(movie_search)
+                
+                # Movie selection logic
+                movie_name = movie_search  # Default to typed name
+                
+                if movie_suggestions:
+                    st.success(f"🎞️ Found {len(movie_suggestions)} matching movies:")
+                    selected_movie = st.selectbox(
+                        "Select from suggestions (or use typed name)",
+                        options=[f"Use '{movie_search}' (new)"] + movie_suggestions,
+                        help="Choose existing movie or create new one"
+                    )
+                    
+                    if not selected_movie.startswith("Use "):
+                        movie_name = selected_movie
+                        st.info(f"✅ Selected existing movie: '{selected_movie}'")
+                    else:
+                        st.info(f"➕ Will create new movie: '{movie_search}'")
+                        
+                elif movie_search:
+                    st.info(f"🆕 No matches found. Will use: '{movie_search}' as new movie name")
+                else:
+                    st.caption("💡 Start typing to search for existing movies or create a new one")
+                
+                # Content type
+                content_type = st.selectbox("Type of Content *", [
+                    "Movie", "Reel", "Trailer", "Series", "Documentary"
+                ])
+                
+                # Status
+                status = st.selectbox("Status *", [
+                    "New", "Ready", "In Progress", "Uploaded", "Processing", "Failed"
+                ], index=0)
+                
+                # Priority
+                priority = st.selectbox("Priority *", [
+                    "High", "Medium", "Low"
+                ], index=1)
+            
+            with col2:
+                # Content name/title
+                content_name = st.text_input("Content Name/Title *", 
+                    placeholder="Enter content title")
+                
+                # Local status
+                local_status = st.selectbox("Local Status", [
+                    "Downloaded", "Processing", "Ready", "Failed", "Pending"
+                ], index=0)
+                
+                # Location path
+                location_path = st.text_input("Location Path", 
+                    placeholder="D:\\CineMitr\\Reels Content\\...",
+                    help="Local storage path for the content")
+                
+                # File size (optional)
+                file_size_mb = st.number_input("File Size (MB)", min_value=0.0, 
+                    help="File size in megabytes")
+                
+                # Duration (optional)
+                duration_seconds = st.number_input("Duration (seconds)", min_value=0, 
+                    help="Content duration in seconds")
+            
+            # Additional Information
+            st.markdown("#### Additional Details")
+            
+            # Description
+            description = st.text_area("Description", 
+                placeholder="Brief description of the content", 
+                max_chars=2000)
+            
+            # Content to add (editing notes)
+            content_to_add = st.text_area("Content Edits Needed", 
+                placeholder="e.g., Basic Crop, Color Correction, Sound Enhancement",
+                help="Notes about what editing needs to be done")
+            
+            # Metadata (JSON format)
+            st.markdown("#### Metadata (Optional)")
+            metadata_input = st.text_area("Metadata (JSON format)", 
+                placeholder='{"title": "Sample", "description": "Content description", "hashtags": ["#tag1", "#tag2"]}',
+                help="JSON formatted metadata for the content",
+                height=150)
+            
+            # Tags
+            tags_input = st.text_input("Tags (comma-separated)", 
+                placeholder="action, drama, bollywood, trending",
+                help="Comma-separated tags for categorization")
+            
+            # Submit button
+            col1, col2, col3 = st.columns([1, 1, 1])
+            with col2:
+                submit_button = st.form_submit_button("🎥 Add Content Item", 
+                    use_container_width=True, type="primary")
+            
+            if submit_button:
+                # Validate required fields
+                if not link_url or not content_name or not content_type:
+                    st.error("❌ Please fill in all required fields (marked with *)")
+                    return False
+                
+                # Process tags
+                tags_list = []
+                if tags_input:
+                    tags_list = [tag.strip() for tag in tags_input.split(',') if tag.strip()]
+                
+                # Process metadata
+                metadata_dict = None
+                if metadata_input:
+                    try:
+                        import json
+                        metadata_dict = json.loads(metadata_input)
+                    except json.JSONDecodeError:
+                        st.error("❌ Invalid JSON format in metadata field")
+                        return False
+                
+                # Prepare content data
+                content_data = {
+                    "name": content_name,
+                    "content_type": content_type,
+                    "status": status,
+                    "priority": priority,
+                    "description": description if description else None,
+                    "file_path": location_path if location_path else None,
+                    "file_size_bytes": int(file_size_mb * 1024 * 1024) if file_size_mb > 0 else None,
+                    "duration_seconds": duration_seconds if duration_seconds > 0 else None,
+                    "tags": tags_list if tags_list else None,
+                    "metadata": metadata_dict,
+                    # Additional fields specific to your use case
+                    "link_url": link_url,
+                    "movie_name": movie_name if movie_name else None,
+                    "local_status": local_status,
+                    "content_to_add": content_to_add if content_to_add else None
+                }
+                
+                # Call API to create content item
+                success = self._create_content_item_via_api(content_data)
+                
+                if success:
+                    st.success(f"🎉 **{content_name}** added successfully!")
+                    st.balloons()
+                    return True
+                else:
+                    st.error("❌ Failed to add content item. Please try again.")
+                    return False
+        
+        return False
+    
+    def _create_content_item_via_api(self, content_data: dict) -> bool:
+        """Create content item via API call"""
+        try:
+            result = self.api_service.create_content_item(content_data)
+            
+            if result.get("status") == "success":
+                # Clear any cached data to refresh the content items list
+                if hasattr(self.api_service, 'refresh_data'):
+                    self.api_service.refresh_data()
+                return True
+            else:
+                st.error(f"API Error: {result.get('message', 'Unknown error')}")
+                return False
+            
+        except Exception as e:
+            st.error(f"API Error: {str(e)}")
+            return False
+    
+    def render_content_items_list(self):
+        """Render content items list with filtering and bulk operations"""
+        st.markdown("### 🎥 Content Items Management")
+        
+        # Search and filter section
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            search_term = st.text_input("🔍 Search", 
+                placeholder="Search content items...", key="content_search")
+        
+        with col2:
+            status_filter = st.selectbox("Filter by Status", 
+                ["All Status", "New", "Ready", "In Progress", "Uploaded", "Processing", "Failed"],
+                key="content_status_filter")
+        
+        with col3:
+            type_filter = st.selectbox("Filter by Type", 
+                ["All Types", "Movie", "Reel", "Trailer", "Series", "Documentary"],
+                key="content_type_filter")
+        
+        with col4:
+            priority_filter = st.selectbox("Filter by Priority", 
+                ["All Priority", "High", "Medium", "Low"],
+                key="content_priority_filter")
+        
+        # Action buttons
+        st.markdown("#### Bulk Operations")
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            export_format = st.selectbox("Export Format", ["csv", "json", "xlsx"], index=0, key="content_export_format")
+            
+            if st.button("📤 Export Selected", key="export_content_items"):
+                selected_content_ids = [
+                    k.replace("content_select_", "") 
+                    for k in st.session_state.keys() 
+                    if k.startswith("content_select_") and st.session_state[k]
+                ]
+                
+                if len(selected_content_ids) > 0:
+                    with st.spinner(f"🚀 Exporting {len(selected_content_ids)} content items to {export_format.upper()}..."):
+                        result = self.api_service.export_content_items(format=export_format, selected_ids=selected_content_ids)
+                        
+                        if result["status"] == "success":
+                            st.success(f"✅ {result['message']}")
+                        else:
+                            st.error(f"❌ Export failed: {result['message']}")
+                else:
+                    st.warning("⚠️ Please select content items to export")
+        
+        with col2:
+            if st.button("📥 Bulk Import", key="bulk_import_content"):
+                st.session_state.show_content_bulk_import = True
+                st.rerun()
+        
+        with col3:
+            if st.button("❌ Delete Selected", key="delete_selected_content"):
+                selected_content_ids = [
+                    k.replace("content_select_", "") 
+                    for k in st.session_state.keys() 
+                    if k.startswith("content_select_") and st.session_state[k]
+                ]
+                
+                if len(selected_content_ids) > 0:
+                    if st.session_state.get('confirm_content_delete', False):
+                        with st.spinner("Deleting selected content items..."):
+                            success_count = 0
+                            for content_id in selected_content_ids:
+                                if self._delete_content_item_via_api(content_id):
+                                    success_count += 1
+                        
+                        st.success(f"✅ {success_count} content items deleted successfully!")
+                        st.session_state.confirm_content_delete = False
+                        st.rerun()
+                    else:
+                        st.session_state.confirm_content_delete = True
+                        st.warning(f"⚠️ Click Delete again to confirm deletion of {len(selected_content_ids)} items.")
+                else:
+                    st.warning("⚠️ Please select content items to delete")
+        
+        with col4:
+            if st.button("🔄 Refresh", key="refresh_content_items"):
+                st.cache_data.clear()
+                st.success("🔄 Content items list refreshed!")
+                st.rerun()
+        
+        # Get content items list
+        content_items_list = self.api_service.get_content_items_list(
+            search=search_term if search_term else None,
+            status=status_filter if status_filter != "All Status" else None,
+            content_type=type_filter if type_filter != "All Types" else None,
+            priority=priority_filter if priority_filter != "All Priority" else None
+        )
+        
+        if not content_items_list:
+            st.info("📦 No content items found. Add some content items to get started!")
+            return
+        
+        # Table header with all the fields you requested
+        header_cols = st.columns([0.4, 1.5, 0.8, 0.8, 0.8, 0.8, 0.8, 1.2, 0.8, 1.2, 1.5, 0.4])
+        headers = ["☑️", "Link", "Movie", "Type", "Status", "Priority", "Edited", "Content Need", "Updated On", "Local Status", "Location Path", "⋮"]
+        
+        for col, header in zip(header_cols, headers):
+            with col:
+                st.markdown(f"**{header}**")
+        
+        # Table rows with all your requested fields
+        for content in content_items_list:
+            cols = st.columns([0.4, 1.5, 0.8, 0.8, 0.8, 0.8, 0.8, 1.2, 0.8, 1.2, 1.5, 0.4])
+            
+            with cols[0]:  # Checkbox
+                st.checkbox("Select", key=f"content_select_{content['id']}", label_visibility="collapsed")
+            
+            with cols[1]:  # Link
+                if content.get('link_url'):
+                    if len(content['link_url']) > 30:
+                        display_link = f"{content['link_url'][:27]}..."
+                    else:
+                        display_link = content['link_url']
+                    st.markdown(f"[{display_link}]({content['link_url']})")
+                else:
+                    st.write("N/A")
+            
+            with cols[2]:  # Movie
+                st.write(content.get('movie_name', 'N/A'))
+            
+            with cols[3]:  # Type of Content
+                st.write(content.get('content_type', 'N/A'))
+            
+            with cols[4]:  # Status
+                status = content.get('status', 'N/A')
+                status_class = f"status-{status.lower().replace(' ', '-')}"
+                st.markdown(f'<span class="{status_class}">{status}</span>', unsafe_allow_html=True)
+            
+            with cols[5]:  # Priority
+                priority = content.get('priority', 'N/A')
+                priority_class = f"priority-{priority.lower()}"
+                st.markdown(f'<span class="{priority_class}">{priority}</span>', unsafe_allow_html=True)
+            
+            with cols[6]:  # Edited
+                edited_status = content.get('edited_status', 'Pending')
+                st.write(edited_status)
+            
+            with cols[7]:  # Content Need to Add
+                content_needed = content.get('content_to_add', content.get('description', ''))
+                if content_needed:
+                    if len(content_needed) > 15:
+                        st.write(f"{content_needed[:12]}...")
+                    else:
+                        st.write(content_needed)
+                else:
+                    st.write("N/A")
+            
+            with cols[8]:  # Updated On
+                updated_at = content.get('updated_at')
+                if updated_at:
+                    try:
+                        from datetime import datetime
+                        if isinstance(updated_at, str) and 'T' in updated_at:
+                            dt = datetime.fromisoformat(updated_at.replace('Z', '+00:00'))
+                            formatted_date = dt.strftime('%Y-%m-%d %H:%M')
+                        else:
+                            formatted_date = str(updated_at)
+                        st.write(formatted_date)
+                    except:
+                        st.write(str(updated_at))
+                else:
+                    st.write("N/A")
+            
+            with cols[9]:  # Local Status
+                local_status = content.get('local_status', 'Pending')
+                st.write(local_status)
+            
+            with cols[10]:  # Location Path
+                location = content.get('file_path', content.get('location_path', ''))
+                if location:
+                    if len(location) > 20:
+                        st.write(f"{location[:17]}...")
+                    else:
+                        st.write(location)
+                else:
+                    st.write("N/A")
+            
+            with cols[11]:  # Actions
+                if st.button("⋮", key=f"content_action_{content['id']}", help="Content actions"):
+                    self._handle_content_item_actions(content)
+    
+    def _handle_content_item_actions(self, content: dict):
+        """Handle content item action menu"""
+        # Store selected content in session state for editing
+        st.session_state.selected_content_for_edit = content
+        st.session_state.show_edit_content_modal = True
+        st.rerun()
+    
+    def _delete_content_item_via_api(self, content_id: str) -> bool:
+        """Delete content item via API call"""
+        try:
+            result = self.api_service.delete_content_item(content_id)
+            
+            if result.get("status") == "success":
+                # Clear any cached data to refresh the content items list
+                if hasattr(self.api_service, 'refresh_data'):
+                    self.api_service.refresh_data()
+                return True
+            else:
+                st.error(f"API Error: {result.get('message', 'Unknown error')}")
+                return False
+            
+        except Exception as e:
+            st.error(f"Delete API Error: {str(e)}")
+            return False
+    
+    def render_edit_content_form(self, content_data: Dict):
+        """Render edit content item form with pre-populated data"""
+        with st.form("edit_content_form", clear_on_submit=False):
+            st.markdown(f"### ✏️ Edit Content Item: {content_data.get('name', 'Unknown')}")
+            st.info("💡 **Tip:** All fields are pre-filled with current data. Make your changes and click **Update Content Item** to save.")
+            
+            # Basic Information
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Link/URL
+                link_url = st.text_input("Content Link/URL *", 
+                    value=content_data.get('link_url', ''),
+                    placeholder="https://www.instagram.com/reel/DEhik5IzuzE/")
+                
+                # Movie association with autocomplete
+                current_movie = content_data.get('movie_name', '')
+                movie_search = st.text_input("Search Movie", 
+                    value=current_movie,
+                    placeholder="Start typing movie name...")
+                
+                # Get movie suggestions
+                movie_suggestions = []
+                if movie_search and len(movie_search) >= 2:
+                    movie_suggestions = self.api_service.get_movie_names_autocomplete(movie_search)
+                
+                movie_name = ""
+                if movie_suggestions:
+                    # Find current movie in suggestions or add it
+                    if current_movie and current_movie not in movie_suggestions:
+                        movie_suggestions.insert(0, current_movie)
+                    
+                    default_index = 0
+                    if current_movie in movie_suggestions:
+                        default_index = movie_suggestions.index(current_movie)
+                    
+                    movie_name = st.selectbox(
+                        "Select Movie",
+                        options=[""] + movie_suggestions,
+                        index=default_index if current_movie else 0
+                    )
+                elif movie_search:
+                    movie_name = movie_search
+                
+                # Content type
+                content_types = ["Movie", "Reel", "Trailer", "Series", "Documentary"]
+                current_type = content_data.get('content_type', 'Reel')
+                type_index = content_types.index(current_type) if current_type in content_types else 1
+                content_type = st.selectbox("Type of Content *", content_types, index=type_index)
+                
+                # Status
+                statuses = ["New", "Ready", "In Progress", "Uploaded", "Processing", "Failed"]
+                current_status = content_data.get('status', 'New')
+                status_index = statuses.index(current_status) if current_status in statuses else 0
+                status = st.selectbox("Status *", statuses, index=status_index)
+                
+                # Priority
+                priorities = ["High", "Medium", "Low"]
+                current_priority = content_data.get('priority', 'Medium')
+                priority_index = priorities.index(current_priority) if current_priority in priorities else 1
+                priority = st.selectbox("Priority *", priorities, index=priority_index)
+            
+            with col2:
+                # Content name
+                content_name = st.text_input("Content Name/Title *", 
+                    value=content_data.get('name', ''))
+                
+                # Local status
+                local_statuses = ["Downloaded", "Processing", "Ready", "Failed", "Pending"]
+                current_local = content_data.get('local_status', 'Pending')
+                local_index = local_statuses.index(current_local) if current_local in local_statuses else 4
+                local_status = st.selectbox("Local Status", local_statuses, index=local_index)
+                
+                # Edited status
+                edited_status = st.text_input("Edited Status", 
+                    value=content_data.get('edited_status', 'Pending'),
+                    placeholder="Basic Crop, Color Correction, etc.")
+                
+                # Location path
+                location_path = st.text_input("Location Path", 
+                    value=content_data.get('file_path', content_data.get('location_path', '')))
+                
+                # File size
+                current_size = content_data.get('file_size_bytes', 0)
+                file_size_mb = st.number_input("File Size (MB)", 
+                    min_value=0.0, 
+                    value=float(current_size / 1024 / 1024) if current_size else 0.0)
+                
+                # Duration
+                duration_seconds = st.number_input("Duration (seconds)", 
+                    min_value=0, 
+                    value=content_data.get('duration_seconds', 0))
+            
+            # Additional Information
+            st.markdown("#### Additional Details")
+            
+            # Description
+            description = st.text_area("Description", 
+                value=content_data.get('description', ''),
+                max_chars=2000)
+            
+            # Content to add (editing notes)
+            content_to_add = st.text_area("Content Edits Needed", 
+                value=content_data.get('content_to_add', ''),
+                help="Notes about what editing needs to be done")
+            
+            # Metadata
+            st.markdown("#### Metadata (Optional)")
+            current_metadata = content_data.get('metadata', {})
+            if current_metadata and isinstance(current_metadata, dict):
+                import json
+                metadata_str = json.dumps(current_metadata, indent=2)
+            else:
+                metadata_str = str(current_metadata) if current_metadata else ''
+            
+            metadata_input = st.text_area("Metadata (JSON format)", 
+                value=metadata_str,
+                height=150)
+            
+            # Action buttons
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                update_button = st.form_submit_button("✏️ Update Content Item", 
+                    use_container_width=True, type="primary")
+            
+            with col2:
+                cancel_button = st.form_submit_button("❌ Cancel", use_container_width=True)
+            
+            with col3:
+                delete_button = st.form_submit_button("🗑️ Delete", use_container_width=True)
+            
+            with col4:
+                duplicate_button = st.form_submit_button("📋 Duplicate", use_container_width=True)
+            
+            # Handle form submissions
+            if cancel_button:
+                st.session_state.show_edit_content_modal = False
+                st.session_state.confirm_content_delete = False
+                st.info("✅ Edit cancelled. No changes were made.")
+                st.rerun()
+            
+            if delete_button:
+                if st.session_state.get('confirm_content_item_delete', False):
+                    success = self._delete_content_item_via_api(content_data['id'])
+                    if success:
+                        st.success(f"🗑️ **{content_data.get('name', 'Content item')}** deleted successfully!")
+                        st.session_state.show_edit_content_modal = False
+                        st.session_state.confirm_content_item_delete = False
+                        st.rerun()
+                    else:
+                        st.error("❌ Failed to delete content item.")
+                else:
+                    st.session_state.confirm_content_item_delete = True
+                    st.warning(f"⚠️ Click Delete again to confirm deletion of **{content_data.get('name', 'this content item')}**.")
+                    st.rerun()
+            
+            if duplicate_button:
+                # Create a copy
+                duplicate_data = content_data.copy()
+                duplicate_data['name'] = f"{duplicate_data.get('name', 'Copy')} (Copy)"
+                if 'id' in duplicate_data:
+                    del duplicate_data['id']
+                
+                success = self._create_content_item_via_api(duplicate_data)
+                if success:
+                    st.success(f"📋 **{duplicate_data.get('name', 'Content item')}** duplicated successfully!")
+                    st.session_state.show_edit_content_modal = False
+                    st.balloons()
+                    st.rerun()
+                else:
+                    st.error("❌ Failed to duplicate content item.")
+            
+            if update_button:
+                # Validate required fields
+                if not link_url or not content_name or not content_type:
+                    st.error("❌ Please fill in all required fields (marked with *)")
+                    return False
+                
+                # Process metadata
+                metadata_dict = None
+                if metadata_input.strip():
+                    try:
+                        import json
+                        metadata_dict = json.loads(metadata_input)
+                    except json.JSONDecodeError:
+                        st.error("❌ Invalid JSON format in metadata field")
+                        return False
+                
+                # Prepare updated content data
+                updated_content_data = {
+                    "name": content_name,
+                    "content_type": content_type,
+                    "status": status,
+                    "priority": priority,
+                    "description": description if description else None,
+                    "file_path": location_path if location_path else None,
+                    "file_size_bytes": int(file_size_mb * 1024 * 1024) if file_size_mb > 0 else None,
+                    "duration_seconds": duration_seconds if duration_seconds > 0 else None,
+                    "metadata": metadata_dict,
+                    # Additional fields
+                    "link_url": link_url,
+                    "movie_name": movie_name if movie_name else movie_search if movie_search else None,
+                    "local_status": local_status,
+                    "edited_status": edited_status,
+                    "content_to_add": content_to_add if content_to_add else None
+                }
+                
+                # Call API to update content item
+                success = self._update_content_item_via_api(content_data['id'], updated_content_data)
+                
+                if success:
+                    st.success(f"✅ **{content_name}** updated successfully!")
+                    st.session_state.show_edit_content_modal = False
+                    st.session_state.confirm_content_item_delete = False
+                    st.balloons()
+                    st.rerun()
+                else:
+                    st.error("❌ Failed to update content item. Please try again.")
+        
+        return False
+    
+    def _update_content_item_via_api(self, content_id: str, content_data: dict) -> bool:
+        """Update content item via API call"""
+        try:
+            result = self.api_service.update_content_item(content_id, content_data)
+            
+            if result.get("status") == "success":
+                # Clear any cached data to refresh the content items list
+                if hasattr(self.api_service, 'refresh_data'):
+                    self.api_service.refresh_data()
+                return True
+            else:
+                st.error(f"API Error: {result.get('message', 'Unknown error')}")
+                return False
+            
+        except Exception as e:
+            st.error(f"Update API Error: {str(e)}")
+            return False

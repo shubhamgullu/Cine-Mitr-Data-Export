@@ -113,67 +113,230 @@ class MovieRepository(BaseRepository):
 
 class ContentRepository(BaseRepository):
     def get_by_id(self, content_id: str) -> Optional[ContentItem]:
-        return self.session.query(ContentItem).options(
-            joinedload(ContentItem.movie),
-            joinedload(ContentItem.tags),
-            joinedload(ContentItem.creator)
-        ).filter(ContentItem.id == content_id).first()
+        """Get content item by ID with schema-safe querying"""
+        try:
+            from database.schema_utils import check_content_schema_migration
+            
+            if check_content_schema_migration(self.session):
+                # Use full ORM query with new columns
+                return self.session.query(ContentItem).options(
+                    joinedload(ContentItem.movie),
+                    joinedload(ContentItem.tags),
+                    joinedload(ContentItem.creator)
+                ).filter(ContentItem.id == content_id).first()
+            else:
+                # Use basic query without joins that might cause issues
+                return self.session.query(ContentItem).filter(ContentItem.id == content_id).first()
+                
+        except Exception as e:
+            # Fallback to simplest query
+            try:
+                return self.session.query(ContentItem).filter(ContentItem.id == content_id).first()
+            except:
+                return None
     
     def get_list(self, page: int, limit: int, filters: ContentFilters) -> Tuple[List[ContentItem], int]:
-        query = self.session.query(ContentItem)
+        """Get content items list with schema-safe querying"""
+        try:
+            from database.schema_utils import check_content_schema_migration
+            
+            # Check if new schema is available
+            if check_content_schema_migration(self.session):
+                # Use full ORM query with new columns
+                query = self.session.query(ContentItem)
+                
+                # Apply filters
+                if filters.status:
+                    query = query.filter(ContentItem.status == filters.status)
+                
+                if filters.content_type:
+                    query = query.filter(ContentItem.content_type == filters.content_type)
+                
+                if filters.priority:
+                    query = query.filter(ContentItem.priority == filters.priority)
+                
+                if filters.search:
+                    search_term = f"%{filters.search}%"
+                    query = query.filter(or_(
+                        ContentItem.name.ilike(search_term),
+                        ContentItem.description.ilike(search_term)
+                    ))
+                
+                if filters.created_after:
+                    query = query.filter(ContentItem.created_at >= filters.created_after)
+                
+                if filters.created_before:
+                    query = query.filter(ContentItem.created_at <= filters.created_before)
+                
+                # Get total count
+                total_count = query.count()
+                
+                # Apply pagination and ordering
+                content_items = query.options(
+                    joinedload(ContentItem.movie),
+                    joinedload(ContentItem.tags)
+                ).order_by(desc(ContentItem.updated_at)).offset((page - 1) * limit).limit(limit).all()
+                
+                return content_items, total_count
+            else:
+                # Use basic SQL query for compatibility
+                return self._get_list_basic_schema(page, limit, filters)
+                
+        except Exception as e:
+            # Fallback to basic schema
+            return self._get_list_basic_schema(page, limit, filters)
+    
+    def _get_list_basic_schema(self, page: int, limit: int, filters: ContentFilters) -> Tuple[List[ContentItem], int]:
+        """Fallback method for basic schema without new columns"""
+        from sqlalchemy import text
         
-        # Apply filters
+        # Build WHERE clause
+        where_conditions = []
+        params = {"limit": limit, "offset": (page - 1) * limit}
+        
         if filters.status:
-            query = query.filter(ContentItem.status == filters.status)
+            where_conditions.append("status = :status")
+            params["status"] = filters.status
         
         if filters.content_type:
-            query = query.filter(ContentItem.content_type == filters.content_type)
+            where_conditions.append("content_type = :content_type")
+            params["content_type"] = filters.content_type
         
         if filters.priority:
-            query = query.filter(ContentItem.priority == filters.priority)
+            where_conditions.append("priority = :priority")
+            params["priority"] = filters.priority
         
         if filters.search:
-            search_term = f"%{filters.search}%"
-            query = query.filter(or_(
-                ContentItem.name.ilike(search_term),
-                ContentItem.description.ilike(search_term)
-            ))
+            where_conditions.append("(name LIKE :search OR description LIKE :search)")
+            params["search"] = f"%{filters.search}%"
         
-        if filters.created_after:
-            query = query.filter(ContentItem.created_at >= filters.created_after)
+        where_clause = " AND ".join(where_conditions) if where_conditions else "1=1"
         
-        if filters.created_before:
-            query = query.filter(ContentItem.created_at <= filters.created_before)
+        # Count query
+        count_result = self.session.execute(text(f"""
+            SELECT COUNT(*) FROM content_items WHERE {where_clause}
+        """), params)
+        total_count = count_result.scalar()
         
-        # Get total count
-        total_count = query.count()
+        # Main query
+        result = self.session.execute(text(f"""
+            SELECT 
+                id, name, content_type, status, priority, description,
+                file_path, file_size_bytes, duration_seconds, thumbnail_url,
+                metadata, movie_id, created_at, updated_at
+            FROM content_items 
+            WHERE {where_clause}
+            ORDER BY updated_at DESC 
+            LIMIT :limit OFFSET :offset
+        """), params)
         
-        # Apply pagination and ordering
-        content_items = query.options(
-            joinedload(ContentItem.movie),
-            joinedload(ContentItem.tags)
-        ).order_by(desc(ContentItem.updated_at)).offset((page - 1) * limit).limit(limit).all()
+        # Convert results to ContentItem-like objects
+        content_items = []
+        for row in result.fetchall():
+            item = type('ContentItem', (), {})()
+            item.id = row[0]
+            item.name = row[1]
+            item.content_type = row[2]
+            item.status = row[3]
+            item.priority = row[4]
+            item.description = row[5]
+            item.file_path = row[6]
+            item.file_size_bytes = row[7]
+            item.duration_seconds = row[8]
+            item.thumbnail_url = row[9]
+            item.meta_data = row[10]
+            item.movie_id = row[11]
+            item.created_at = row[12]
+            item.updated_at = row[13]
+            # Set default values for new fields
+            item.link_url = None
+            item.movie_name = None
+            item.local_status = 'Pending'
+            item.edited_status = 'Pending'
+            item.content_to_add = None
+            item.source_folder = None
+            content_items.append(item)
         
         return content_items, total_count
     
     def create(self, content_data: Dict[str, Any]) -> ContentItem:
-        content = ContentItem(**content_data)
-        self.session.add(content)
-        self.session.flush()
-        return content
+        """Create content item with schema-safe field handling"""
+        try:
+            from database.schema_utils import check_content_schema_migration
+            
+            # Filter content data based on available schema
+            if not check_content_schema_migration(self.session):
+                # Remove new fields if schema hasn't been migrated
+                safe_data = content_data.copy()
+                new_fields = ['link_url', 'movie_name', 'local_status', 'edited_status', 'content_to_add', 'source_folder']
+                for field in new_fields:
+                    safe_data.pop(field, None)
+                content_data = safe_data
+            
+            content = ContentItem(**content_data)
+            self.session.add(content)
+            self.session.flush()
+            return content
+            
+        except Exception as e:
+            # Fallback: try with basic fields only
+            basic_fields = {
+                'name': content_data.get('name'),
+                'content_type': content_data.get('content_type'),
+                'status': content_data.get('status', 'New'),
+                'priority': content_data.get('priority', 'Medium'),
+                'description': content_data.get('description'),
+                'file_path': content_data.get('file_path'),
+                'file_size_bytes': content_data.get('file_size_bytes'),
+                'duration_seconds': content_data.get('duration_seconds'),
+                'metadata': content_data.get('metadata')
+            }
+            # Remove None values
+            basic_fields = {k: v for k, v in basic_fields.items() if v is not None}
+            
+            content = ContentItem(**basic_fields)
+            self.session.add(content)
+            self.session.flush()
+            return content
     
     def update(self, content_id: str, content_data: Dict[str, Any]) -> Optional[ContentItem]:
+        """Update content item with schema-safe field handling"""
         content = self.get_by_id(content_id)
         if not content:
             return None
         
-        for key, value in content_data.items():
-            if hasattr(content, key):
-                setattr(content, key, value)
-        
-        content.updated_at = datetime.utcnow()
-        self.session.flush()
-        return content
+        try:
+            from database.schema_utils import check_content_schema_migration
+            
+            # Filter content data based on available schema
+            if not check_content_schema_migration(self.session):
+                # Remove new fields if schema hasn't been migrated
+                safe_data = content_data.copy()
+                new_fields = ['link_url', 'movie_name', 'local_status', 'edited_status', 'content_to_add', 'source_folder']
+                for field in new_fields:
+                    safe_data.pop(field, None)
+                content_data = safe_data
+            
+            for key, value in content_data.items():
+                if hasattr(content, key):
+                    setattr(content, key, value)
+            
+            content.updated_at = datetime.utcnow()
+            self.session.flush()
+            return content
+            
+        except Exception as e:
+            # Fallback: update only basic fields
+            basic_fields = ['name', 'content_type', 'status', 'priority', 'description', 
+                          'file_path', 'file_size_bytes', 'duration_seconds', 'metadata']
+            
+            for key, value in content_data.items():
+                if key in basic_fields and hasattr(content, key):
+                    setattr(content, key, value)
+            
+            content.updated_at = datetime.utcnow()
+            self.session.flush()
+            return content
     
     def update_status(self, content_id: str, status: ContentStatus) -> bool:
         content = self.get_by_id(content_id)
@@ -227,9 +390,66 @@ class ContentRepository(BaseRepository):
         }
     
     def get_recent_activity(self, limit: int = 10) -> List[ContentItem]:
-        return self.session.query(ContentItem).options(
-            joinedload(ContentItem.movie)
-        ).order_by(desc(ContentItem.updated_at)).limit(limit).all()
+        """Get recent activity with schema-safe querying"""
+        try:
+            from database.schema_utils import check_content_schema_migration
+            
+            # Check if new schema is available
+            if check_content_schema_migration(self.session):
+                # Use full query with new columns
+                return self.session.query(ContentItem).options(
+                    joinedload(ContentItem.movie)
+                ).order_by(desc(ContentItem.updated_at)).limit(limit).all()
+            else:
+                # Use basic query without new columns
+                from sqlalchemy import text
+                result = self.session.execute(text("""
+                    SELECT 
+                        id, name, content_type, status, priority, description,
+                        file_path, file_size_bytes, duration_seconds, thumbnail_url,
+                        metadata, movie_id, created_at, updated_at
+                    FROM content_items 
+                    ORDER BY updated_at DESC 
+                    LIMIT :limit
+                """), {"limit": limit})
+                
+                # Convert results to ContentItem-like objects
+                content_items = []
+                for row in result.fetchall():
+                    # Create a minimal ContentItem object
+                    item = type('ContentItem', (), {})()
+                    item.id = row[0]
+                    item.name = row[1]
+                    item.content_type = row[2]
+                    item.status = row[3]
+                    item.priority = row[4]
+                    item.description = row[5]
+                    item.file_path = row[6]
+                    item.file_size_bytes = row[7]
+                    item.duration_seconds = row[8]
+                    item.thumbnail_url = row[9]
+                    item.meta_data = row[10]
+                    item.movie_id = row[11]
+                    item.created_at = row[12]
+                    item.updated_at = row[13]
+                    # Set default values for new fields
+                    item.link_url = None
+                    item.movie_name = None
+                    item.local_status = 'Pending'
+                    item.edited_status = 'Pending'
+                    item.content_to_add = None
+                    item.source_folder = None
+                    content_items.append(item)
+                
+                return content_items
+                
+        except Exception as e:
+            # Fallback to basic query if schema check fails
+            try:
+                return self.session.query(ContentItem).order_by(desc(ContentItem.updated_at)).limit(limit).all()
+            except:
+                # Last resort: return empty list
+                return []
 
 class ContentTagRepository(BaseRepository):
     def add_tags(self, content_id: str, tags: List[str]):

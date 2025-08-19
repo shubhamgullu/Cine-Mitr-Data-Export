@@ -64,3 +64,5 @@
 2025-08-18 12:47:20 | main | INFO | main.py:85 | [OK] GET /api/v1/movies - 200 - 0.029s
 2025-08-18 12:48:10 | main | INFO | main.py:73 | [REQ] GET /api/v1/movies - Client: 127.0.0.1
 2025-08-18 12:48:10 | main | INFO | main.py:85 | [OK] GET /api/v1/movies - 200 - 0.019s
+2025-08-19 01:44:24 | main | INFO | main.py:73 | [REQ] GET /api/v1/movies - Client: 127.0.0.1
+2025-08-19 01:44:24 | main | INFO | main.py:85 | [OK] GET /api/v1/movies - 200 - 0.093s

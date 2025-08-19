@@ -101,6 +101,15 @@ class ContentItem(Base):
     created_by = Column(String(36), ForeignKey('users.id'), nullable=True)
     uploaded_at = Column(DateTime, nullable=True)
     processed_at = Column(DateTime, nullable=True)
+    
+    # Additional fields for content management
+    link_url = Column(Text, nullable=True, comment='Original source URL (e.g., Instagram reel URL)')
+    movie_name = Column(String(255), nullable=True, comment='Movie name for content association')
+    local_status = Column(Enum('Downloaded', 'Processing', 'Ready', 'Failed', 'Pending', name='local_status_types'), default='Pending', nullable=True)
+    edited_status = Column(String(100), nullable=True, default='Pending', comment='Edit status (Basic Crop, etc.)')
+    content_to_add = Column(Text, nullable=True, comment='Notes about content editing needs')
+    source_folder = Column(Text, nullable=True, comment='Source folder path for downloaded content')
+    
     created_at = Column(DateTime, default=func.now(), nullable=False)
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
     
